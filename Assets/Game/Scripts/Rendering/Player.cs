@@ -2,9 +2,8 @@
 using System.Collections;
 
 public class Player : MonoBehaviour {
-	public GameObject Selected;
+	public Transform Selected;
 	public bool androidFire = false;
-	public int HP = 3;
 
 	void Start () 
 	{
