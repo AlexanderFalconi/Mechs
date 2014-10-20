@@ -23,4 +23,10 @@ public class Reactor : Component
 		}
 		Energy = energy;
 	}
+
+    public void EventDamage()
+    {//Override
+    	if(Status < 10)
+    		Status++;
+    }
 }

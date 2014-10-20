@@ -14,7 +14,7 @@ public class Mech : Mobile {
 	private Chassis InternalStructure;
 	public Pilot PilotOb;
 	public Weapon SelectedWeapon;
-	public int[] position;//TEMP?
+	public Vector3 Pos;
 
 	public Mech() 
 	{
@@ -145,7 +145,7 @@ public class Mech : Mobile {
 		
 	}
 
-	private void EventAttack(GameObject target, Ammunition ammo)
+	private void EventAttack(Transform target, Ammunition ammo)
 	{
 		float result;
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
@@ -156,35 +156,106 @@ public class Mech : Mobile {
 			accuracy += target.GetComponent<Mech>().GetDodge();//not yet set
 		if(accuracy > 11)
 			accuracy = 11;
+		else if(accuracy < 0)
+			accuracy = 0;
 		result = Random.Range(0.1f, 100.0f);
-		//if hit
-		//eventDamage on target
+		if(result < Engine.Random[accuracy])
+			return target.EventDamage(ammo);//Might penetrate and hit something past
+		else
+			return ammo;//Might hit something past
 	}
 
-	public void EventDamage(Bullet bullet)
+	public void EventDamage(Transform attacker, Ammunition ammo)
 	{
-		audio.Play();
-		//determine hit table to use
-		//determine where hit on table
-		//apply damage
-		//if extra, apply damage to internal
-		//if internal, check crit
-		//if crit
-		//eventCritical
-
-		//deal with overflow damage
-
-		//if(armor["remaining"] <= 0)
-		//	EventDestruct();
+		audio.Play();//TEMP: this should be moved to render
+		string table = GetHitTable();//Get hit table
+		string location;
+		string side = "external";//Flag to take from ordinary external
+		int damage, hardness, crit;
+		if(table == "rear")
+		{
+			rear = "rear";//Flag to take from rear armor
+			table = "front";//Rear table is same as front in most cases, just need to set the above flag to ensure rear armor is hit
+		}
+		result = Random.Range(1, 36);
+		foreach(KeyValuePair<string,int> item in HitTable[table])
+		{//Determine where hit on table
+			result -= item.Value;
+			if(result <= 0)
+			{
+				location = item.Key
+				break;//Done
+			}
+		}
+		if(damage < Armors[location][side].Hardness[ammo.DamageType])
+		{
+			ammo.Damage = 0;
+			return;//Armor absorbs the blow, but its ineffective.
+		}
+		hardness = Armors[location][side].Hardness[ammo.DamageType];
+		damage = ammo.Damage / hardness;//Convert to relative damage based on armor hardness
+		damageR = ammo.Damage % hardness;//The remainder does not necessary truncate
+		result = Random.Range(1, hardness);//Chance of it applying depends on how high
+		if(result <= damageR)//Check to see if extra damage
+			damage++;//Add 1 extra damage
+		if(Armors[location][side] >= damage)
+		{//External armor soaks
+			Armors[location][side] -= damage;
+			ammo.Damage = 0;//Armor absorbs the blow
+			return;
+		}
+		else
+		{
+			damage -= Armors[location][side];
+			ammo.Damage -= Armors[location][side] * hardness;//Absorm some of the blow
+			Armors[location][side] = 0;//Shear off all armor
+			if(Armors[location]["internal"] >= damage)
+			{//Internal armor soaks
+				crit = damage;
+				Armors[location]["internal"] -= damage;
+				ammo.Damage = 0;
+				return;
+			}
+			else
+			{
+				crit = Armors[location]["internal"];
+				damage -= Armors[location]["internal"];
+				ammo.Damage -= Armors[location]["internal"] * hardness;//Absorm some of the blow
+				Armors[location]["internal"] = 0;//Shear off all armor
+				//TEMP: Damage transfer into mech?
+			}
+		}
+		//TEMP: Can fall from damage?
+		eventCritical(crit);//Check for crits last because of possible ammo explosions
 	}
 
-	private void EventCritical()
+	private GetHitTable()
 	{
-		//get mass of limb
-		//determine random start point
-		//apply damage amount and see what components were hit
-		//eventDamage on component which updates status of it or if reactor handles differently
-		//or if ammo can explode ammo and continue thsi process
+		float angle = Vector3.Angle(other.position, rotation);
+		if(angle < 90.0f || angle > 270.0f)
+			return "front";
+		else if(angle >= 90.0f && angle <= 150.0f)
+			return "right";
+		else if(angle > 150.0f && angle < 210.0f)
+			return "rear";
+		else if(angle >= 210.0f && angle <= 270.0f)
+			return "left";
+	}
+
+	private void EventCritical(string location, int damage)
+	{
+		float possible = Proportion[location]["max mass"];
+		float result;
+		for(int i = 0; i < damage; i++)
+		{
+			result = Random.Range(0.0f, possible);
+			foreach(Component item in Components[location])
+			{
+				result -= item.Mass;
+				if(result <= 0)
+					item.eventDamage();
+			}
+		}
 	}
 
 	public void EventManeuver()

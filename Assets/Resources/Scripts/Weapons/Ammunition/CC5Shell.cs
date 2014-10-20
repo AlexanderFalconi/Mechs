@@ -10,9 +10,11 @@ public class CC5Shell : Ammunition
 	static public int Damage = 100;
 	static public int Velocity = 8;//Affects accuracy, power degredation
 	static public List<string> Compatible = new List<string>() {"TC-15", "AC-15"};
-	public int Amount = 16;
+	static public float Combustibility = 0.05f;
+	static public int Bundle = 16;
 	public CC5Shell()
 	{
 		PrefabID = "Bullet";
+		Amount = Bundle;
 	}
 }
