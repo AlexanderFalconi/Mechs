@@ -1,12 +1,12 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class Armor 
 {
 	static public int ArmorUnits = 8;//Per 0.25 mass
 	public float Mass;
-	public int MaxHP;
-	public int HP;
+	public int MaxHP, HP;
+	public Dictionary<string,int> Hardness;
 
 	public Armor(float mass)
 	{

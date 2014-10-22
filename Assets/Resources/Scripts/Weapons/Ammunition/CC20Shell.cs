@@ -6,8 +6,6 @@ public class CC20Shell : Ammunition
 {
 	static public string Short = "20cc Shells";
 	static public string Long = "A bundle of 15cc ballistic shells.";
-	static public string DamageType = "ballistic";
-	static public int Damage = 400;
 	static public int Velocity = 2;//Affects accuracy, power degredation
 	static public List<string> Compatible = new List<string>() {"TC-20"};
 	static public float Combustibility = 0.2f;
@@ -16,5 +14,7 @@ public class CC20Shell : Ammunition
 	{
 		PrefabID = "Bullet";
 		Amount = Bundle;
+		DamageType = "ballistic";
+		Damage = 400;
 	}
 }

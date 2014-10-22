@@ -73,8 +73,9 @@ public class Mech : Mobile {
 
 	public float AddComponent(string limb, Component part)
 	{
-		Proportion[limb]["mass"] += part.Mass;//Increment used mass
-		Components[limb].Add(part);
+		Proportion[limb]["mass"] += part.GetMass();//Increment used mass
+		Components[limb].Add(part);//Add to inventory
+		part.EventAttach(this, limb);//Attach to mech
 		return Proportion[limb]["max mass"] - Proportion[limb]["mass"];
 	}
 
@@ -145,7 +146,7 @@ public class Mech : Mobile {
 		
 	}
 
-	private void EventAttack(Transform target, Ammunition ammo)
+	private Ammunition EventAttack(Mech target, Ammunition ammo)
 	{
 		float result;
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
@@ -160,21 +161,21 @@ public class Mech : Mobile {
 			accuracy = 0;
 		result = Random.Range(0.1f, 100.0f);
 		if(result < Engine.Random[accuracy])
-			return target.EventDamage(ammo);//Might penetrate and hit something past
+			return target.EventDamage(this, ammo);//Might penetrate and hit something past
 		else
 			return ammo;//Might hit something past
 	}
 
-	public void EventDamage(Transform attacker, Ammunition ammo)
+	public Ammunition EventDamage(Mech attacker, Ammunition ammo)
 	{
 		audio.Play();//TEMP: this should be moved to render
-		string table = GetHitTable();//Get hit table
-		string location;
+		string table = GetHitTable(attacker);//Get hit table
+		string location = "none";
 		string side = "external";//Flag to take from ordinary external
-		int damage, hardness, crit;
+		int result, damage, damageR, hardness, crit;
 		if(table == "rear")
 		{
-			rear = "rear";//Flag to take from rear armor
+			side = "rear";//Flag to take from rear armor
 			table = "front";//Rear table is same as front in most cases, just need to set the above flag to ensure rear armor is hit
 		}
 		result = Random.Range(1, 36);
@@ -183,55 +184,56 @@ public class Mech : Mobile {
 			result -= item.Value;
 			if(result <= 0)
 			{
-				location = item.Key
+				location = item.Key;
 				break;//Done
 			}
 		}
-		if(damage < Armors[location][side].Hardness[ammo.DamageType])
+		hardness = Armors[location][side].Hardness[ammo.DamageType];
+		if(ammo.Damage < Armors[location][side].Hardness[ammo.DamageType])
 		{
 			ammo.Damage = 0;
-			return;//Armor absorbs the blow, but its ineffective.
+			return ammo;//Armor absorbs the blow, but its ineffective.
 		}
-		hardness = Armors[location][side].Hardness[ammo.DamageType];
 		damage = ammo.Damage / hardness;//Convert to relative damage based on armor hardness
 		damageR = ammo.Damage % hardness;//The remainder does not necessary truncate
 		result = Random.Range(1, hardness);//Chance of it applying depends on how high
 		if(result <= damageR)//Check to see if extra damage
 			damage++;//Add 1 extra damage
-		if(Armors[location][side] >= damage)
+		if(Armors[location][side].HP >= damage)
 		{//External armor soaks
-			Armors[location][side] -= damage;
+			Armors[location][side].HP -= damage;
 			ammo.Damage = 0;//Armor absorbs the blow
-			return;
+			return ammo;
 		}
 		else
 		{
-			damage -= Armors[location][side];
-			ammo.Damage -= Armors[location][side] * hardness;//Absorm some of the blow
-			Armors[location][side] = 0;//Shear off all armor
-			if(Armors[location]["internal"] >= damage)
+			damage -= Armors[location][side].HP;
+			ammo.Damage -= Armors[location][side].HP * hardness;//Absorm some of the blow
+			Armors[location][side].HP = 0;//Shear off all armor
+			if(Armors[location]["internal"].HP >= damage)
 			{//Internal armor soaks
 				crit = damage;
-				Armors[location]["internal"] -= damage;
+				Armors[location]["internal"].HP -= damage;
 				ammo.Damage = 0;
-				return;
+				return ammo;
 			}
 			else
 			{
-				crit = Armors[location]["internal"];
-				damage -= Armors[location]["internal"];
-				ammo.Damage -= Armors[location]["internal"] * hardness;//Absorm some of the blow
-				Armors[location]["internal"] = 0;//Shear off all armor
+				crit = Armors[location]["internal"].HP;
+				damage -= Armors[location]["internal"].HP;
+				ammo.Damage -= Armors[location]["internal"].HP * hardness;//Absorm some of the blow
+				Armors[location]["internal"].HP = 0;//Shear off all armor
 				//TEMP: Damage transfer into mech?
 			}
 		}
 		//TEMP: Can fall from damage?
-		eventCritical(crit);//Check for crits last because of possible ammo explosions
+		EventCritical(location, crit);//Check for crits last because of possible ammo explosions
+		return ammo;
 	}
 
-	private GetHitTable()
+	private string GetHitTable(Mech other)
 	{
-		float angle = Vector3.Angle(other.position, rotation);
+		float angle = Vector3.Angle(other.transform.position, transform.position);
 		if(angle < 90.0f || angle > 270.0f)
 			return "front";
 		else if(angle >= 90.0f && angle <= 150.0f)
@@ -240,6 +242,8 @@ public class Mech : Mobile {
 			return "rear";
 		else if(angle >= 210.0f && angle <= 270.0f)
 			return "left";
+		else
+			return "none";
 	}
 
 	private void EventCritical(string location, int damage)
@@ -251,9 +255,9 @@ public class Mech : Mobile {
 			result = Random.Range(0.0f, possible);
 			foreach(Component item in Components[location])
 			{
-				result -= item.Mass;
+				result -= item.GetMass();
 				if(result <= 0)
-					item.eventDamage();
+					item.EventDamage();
 			}
 		}
 	}
