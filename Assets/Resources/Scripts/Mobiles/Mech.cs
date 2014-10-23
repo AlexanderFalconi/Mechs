@@ -146,7 +146,20 @@ public class Mech : Mobile {
 		
 	}
 
-	private Ammunition EventAttack(Mech target, Ammunition ammo)
+	public void EventMeleeAttack(Mech target, Component limb)
+	{
+		float result;
+		int accuracy = PilotOb.Piloting + limb.MeleePenalty;//kick +0; punch push +1; charge +2
+	}
+
+	//MeleeDamage = 1 per 10 tons for punch 1 per 5 tons for kick; reduce by broken actuators
+	//Charge is 1 per 10 tons MULTIPLIED by momentum; chargee gets hit back for the same amount depending on relative momentum (factor in angle of hit)
+	//... damage is reduced into 5 point clusters (base this on self mass, more for bigger less for smaller)
+	//... crushing is the same except attacker hits on top table defender hits on bottom
+	//change top and bottom to deal with left and right hits as well... 
+
+
+	private Ammunition EventRangedAttack(Mech target, Ammunition ammo)
 	{
 		float result;
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
