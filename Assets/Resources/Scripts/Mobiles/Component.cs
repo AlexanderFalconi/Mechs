@@ -6,13 +6,11 @@ public class Component
     private float Mass;
     public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public int Power;
-    public Mech Installed;
-    public string Attached;
+    public Part Installed;
 
-    public void EventAttach(Mech who, string location)
+    public void EventInstall(Part part)
     {
-        Installed = who;//What is it attached to
-        Attached = location;//Where is it attached
+        Installed = part;//What is it attached to
     }
 
     public void SetMass(float mass)
@@ -25,9 +23,10 @@ public class Component
         return Mass;
     }
 
-    public void EventDamage()
+    public void EventDamage(int dmg)
     {
-    	if(Status < 3)
-    		Status++;
+        Status += dmg;
+    	if(Status > 3)
+    		Status = 3;//0: ok, 1: stun, 2: damaged, 3: destroyed
     }
 }

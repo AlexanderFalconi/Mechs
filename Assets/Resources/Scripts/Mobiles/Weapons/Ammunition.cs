@@ -13,6 +13,6 @@ public class Ammunition : Component
     {//Override
     	float result = Random.Range(0.1f, 100.0f);
     	if(result < Combustibility * Amount)
-    		Installed.EventDamage(Installed, new AmmoExplosion(Damage * Amount));//Ammo explodes!
+    		Installed.Master.EventDamage(Installed.Master, new AmmoExplosion(Damage * Amount));//Ammo explodes!
     }
 }

@@ -24,9 +24,15 @@ public class Reactor : Component
 		Energy = energy;
 	}
 
-    public void EventDamage()
+	public float GetEfficiency()
+	{
+		return 100 - Status;
+	}
+
+    public void EventDamage(int dmg)
     {//Override
-    	if(Status < 10)
-    		Status++;
+    	Status += dmg*dmg;
+    	if(Status > 100)
+    		Status = 100;
     }
 }

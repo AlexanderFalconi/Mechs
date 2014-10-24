@@ -71,4 +71,13 @@ public class Engine : MonoBehaviour {
 	{
 		return Mathf.Pow(size, 2.0f);
 	}
+
+	public static float GetThreshold(int dc)
+	{
+		if(dc < 0)
+			dc = 0;
+		else if(dc > 11)
+			dc = 11;
+		return Random[dc];
+	}
 }
