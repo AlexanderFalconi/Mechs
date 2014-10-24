@@ -129,6 +129,12 @@ public class Mech : Mobile {
 		//pilot after kick charge crush attacks
 	}
 
+    public void EventMeleeAttack(Mech target, Component limb)
+    {
+        float result;
+        int accuracy = PilotOb.Piloting + limb.MeleePenalty;//kick +0; punch push +1; charge +2
+    }
+
 	private void EventRangedAttack(Mech target, Ammunition ammo)
 	{
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
