@@ -18,6 +18,7 @@ public class Part {
 		Parent = limb;
 		limb.Children.Add(Parent);
 	}
+
 	public float Install(Component part)
 	{
 		Proportion["mass"] += part.GetMass();//Increment used mass
@@ -25,6 +26,7 @@ public class Part {
 		part.EventInstall(this);//Attach to part
 		return Proportion["max mass"] - Proportion["mass"];
 	}
+
 	public void AddArmor(string loc, float mass)
 	{
 		if(Armors[loc] == null)
@@ -38,6 +40,15 @@ public class Part {
 			Proportion["mass"] += mass;
 		}
 	}
+
+	public float GetStabilization()
+	{
+		float stabilization;
+		foreach(Component item in Components)
+			stabilization += item.GetStabilization();
+		return Mathf.Floor(stabilization/Master.GetMass());
+	}
+	
 	public int GetMeleeCR()
 	{
 		return 0;

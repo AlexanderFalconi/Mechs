@@ -17,9 +17,10 @@ public class CenterTorso : Part
 		float[] arc = {322.5f, 37.5f};
 		return arc;
 	}
+
 	public int GetMeleeCR()
 	{
-		return 2;
+		return 2;//Used for charge, pounce
 	}
 }
 

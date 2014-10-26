@@ -11,20 +11,32 @@ public class LeftArm : Part
 		Melee.Add("punch");
 		Melee.Add("kick");
 	}
-	//make sure upper and lower arm actuators exist
-	//for punch damage make sure hand actuator exists
-	//handle aim and accuracy with actuators
-	//handle arc
 
 	public float[] GetFiringArc()
 	{
-		//affected by actuators
-		float[] arc = {202.5f, 62.5f};
+		float rotation;
+		int expand;
+		float rotation[2];
+		foreach(Component item in Components)
+			rotation = item.GetRotation();
+		expand += Mathf.Floor(rotation/Master.GetMass()) * 15;//On average should be 225
+		arc[0] = 337.5 - expand/2;
+		arc[1] = 337.5 + expand/2;
+		if(arc[1] >= 360)
+			arc[1]-=360;
 		return arc;
+	}
+
+	public float GetAccuracy()
+	{
+		float accuracy;
+		foreach(Component item in Components)
+			accuracy += item.GetAccuracy();
+		return Mathf.Floor(accuracy/Master.GetMass());
 	}
 
 	public int GetMeleeCR()
 	{
-		return 1;
+		return 1;//Punch kick
 	}
 }

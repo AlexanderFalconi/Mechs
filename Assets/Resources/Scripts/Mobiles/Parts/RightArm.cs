@@ -11,12 +11,30 @@ public class RightArm : Part
 		Melee.Add("punch");
 		Melee.Add("kick");
 	}
+
 	public float[] GetFiringArc()
 	{
-		//affected by actuators
-		float[] arc = {292.5f, 157.5f};
+		float rotation;
+		int expand;
+		float rotation[2];
+		foreach(Component item in Components)
+			rotation = item.GetRotation();
+		expand += Mathf.Floor(rotation/Master.GetMass()) * 15;//On average should be 225
+		arc[0] = 22.5f - expand/2;
+		arc[1] = 22.5f + expand/2;
+		if(arc[1] >= 360)
+			arc[1]-=360;
 		return arc;
 	}
+
+	public float GetAccuracy()
+	{
+		float accuracy;
+		foreach(Component item in Components)
+			accuracy += item.GetAccuracy();
+		return Mathf.Floor(accuracy/Master.GetMass());
+	}
+
 	public int GetMeleeCR()
 	{
 		return 1;

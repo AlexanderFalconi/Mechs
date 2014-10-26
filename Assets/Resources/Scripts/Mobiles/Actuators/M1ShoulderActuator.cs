@@ -1,20 +1,20 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
-public class M1ArmActuator : Actuator 
+public class M1ShoulderActuator : Actuator 
 {
-	public string Short = "Mark-1 Arm Actuator";
-	public string Long = "A MechTech Mark-1 arm actuator. It runs along the entire length of the arm and benefits any attached weaponry with a large firing arc.";
+	public string Short = "Mark-1 Shoulder Actuator";
+	public string Long = "A MechTech Mark-1 shoulder actuator. It binds the upper arm with the torso and expands the range of motion of the arm.";
 	public string[] Compatibility = new string[] {"left arm", "right arm"};
 
 	public float GetAccuracy()
 	{
-		return GetMass() * 0.35f;
+		return GetMass() * 0.15f;
 	}
 
 	public float GetRotation()
 	{
-		return GetMass() * 0.15f;
+		return GetMass() * 0.35f;
 	}
 
 	public void EventInstall()

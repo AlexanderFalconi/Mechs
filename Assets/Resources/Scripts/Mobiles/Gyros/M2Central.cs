@@ -11,4 +11,9 @@ public class M2Central : Gyro
 	{
 		SetMass(0.5f);
 	}
+
+	public float GetStabilization()
+	{
+		return 100.0f;
+	}
 }

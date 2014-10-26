@@ -19,5 +19,28 @@ public class LeftLeg : Part
 	{
 		return 0;
 	}
-	//handle movement with actuators and balance withi foot actuators and rotation with hip actuators and torso twist
+
+	public float GetBalance()
+	{
+		float balance;
+		foreach(Component item in Components)
+			balance += item.GetBalance();
+		return Mathf.Floor(balance/Master.GetMass());
+	}
+
+	public float GetMobility()
+	{
+		float mobility;
+		foreach(Component item in Components)
+			mobility += item.GetMobility();
+		return Mathf.Floor(mobility/Master.GetMass());
+	}
+
+	public float GetLocomotion()
+	{
+		float locomotion;
+		foreach(Component item in Components)
+			locomotion += item.GetLocomotion();
+		return Mathf.Floor(locomotion/Master.GetMass());
+	}
 }

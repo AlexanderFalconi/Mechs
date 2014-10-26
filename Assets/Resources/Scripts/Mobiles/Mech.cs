@@ -14,11 +14,6 @@ public class Mech : Mobile {
 	public int Face;
 	public string ID;
 
-	public Mech() 
-	{
-
-	}
-
 	public string GetID()
 	{
 		return ID;
@@ -136,43 +131,65 @@ public class Mech : Mobile {
 		//base.OrderFire(target, SelectedWeapon.Loaded);
 	}
 
+	//Standard actuator puts out 50 force per ton. ratio of total mass to actuator outage is speed. i.e. 1T outputs 50 so for 10T mech thats ratio 5.0 for speed 5.
+	//energy to walk within ratio, mass*spd; to run its doubling up each step.
+
+	//arm actuator, same rating to move arm, excess factors into climbing and punching
+	//so extra does move into punch damage
+	//hand actuator allows grabbing; safe to punch or claw
+	//hip actuator allows for rotating twisting
+	//foot actuator allows balancing, safely kicking
+	
+
 	public void OrderFire(Vector3 target)
 	{//indirect fire
+		float result;
 		List<Vector3> steps = GetDirectSteps(Position, target);
-		Dictionary<string,Dictionary<string,int>> partial = new Dictionary<string,Dictionary<string,int>>(); 
-		//{
-		//	{"x", {{"+", 0}, {"-", 0}}},{"y", {{"+", 0}, {"-", 0}}},{"z", {{"+", 0}, {"-", 0}}}
-		//};
+		Dictionary<string,float[2]> scan = new Dictionary<string,float[2]>() {{"x", {0.0f, 0.0f}},{"y", {0.0f, 0.0f}},{"z", {0.0f, 0.0f}}};
+		Dictionary<string,float[2]> partial = new Dictionary<string,float[2]>() {{"x", {0.0f, 0.0f}},{"y", {0.0f, 0.0f}},{"z", {0.0f, 0.0f}}};
+		List<float[]> chance;
 		foreach(Vector3 step in steps)
 		{//For each step in the path
-			float xP, yP, zP;
-			partial["x"]["-"] = Mathf.Floor(step.x);
-			partial["x"]["+"] = Mathf.Ceil(step.x);
-			partial["x"]["-~"] = 1.0f - step.x%1.0f;
-			partial["x"]["+~"] = step.x%1.0f;
-			partial["y"]["-"] = Mathf.Floor(step.y);
-			partial["y"]["+"] = Mathf.Ceil(step.y);
-			partial["y"]["-~"] = 1.0f - step.x%1.0f;
-			partial["y"]["+~"] = step.x%1.0f;
-			partial["z"]["-"] = Mathf.Floor(step.z);
-			partial["z"]["+"] = Mathf.Ceil(step.z);
-			zP = step.z%1.0f;
-			for(int y = partial["y"]["-"]; y <= partial["y"]["+"]; y++)
-			{
-				//float chanceY = 
-				for(int z = partial["z"]["-"]; z <= partial["z"]["+"]; z++)
+			chance = new List<float[]>();
+			scan["x"][0] = Mathf.Floor(step.x);
+			scan["x"][1] = Mathf.Ceil(step.x);
+			partial["x"][0] = 1.0f - step.x%1.0f;
+			partial["x"][1] = step.x%1.0f;
+			scan["y"][0] = Mathf.Floor(step.y);
+			scan["y"][1] = Mathf.Ceil(step.y);
+			partial["y"][0] = 1.0f - step.y%1.0f;
+			partial["y"][1] = step.y%1.0f;
+			scan["z"][0] = Mathf.Floor(step.z);
+			scan["z"][1] = Mathf.Ceil(step.z);
+			partial["z"][0] = 1.0f - step.z%1.0f;
+			partial["z"][1] = step.z%1.0f;
+			for(int y = 0; y <= 1; y++)
+			{//foreach possible tile that could be hit, get a random chance and assign to the tile
+				for(int z = 0; z <= 1; z++)
 				{
-					for(int x = partial["x"]["-"]; x<= partial["x"]["+"]; x++)
-					{
-						//float chance = 
-					}
+					for(int x = 0; x <= 1; x++)
+						chance.Add(new float[] {x, y, z, scan["x"][x]*partial["x"][x]*scan["y"][y]*partial["y"][y]*scan["z"][z]*partial["z"][z]});
 				}
-	
 			}
-			//if()
-			//Engine.Grid[]
+			result = Random.Range(0.1f, 100.0f);
+			foreach(float[] ch in chance)
+			{//Take the random chances to hit each tile, and find the tile that's hit
+				result -= ch[3];
+				if(result <= 0)
+				{//Found the tile to hit, see if an entity is there
+					if(Engine.Grid[ch[0], ch[1], ch[2]] != null)//An entity is here
+					{
+						Mech potential = Engine.Grid[ch[0], ch[1], ch[2]];
+						if(potential == target)
+							EventRangedAttack(Engine.Grid[ch[0], ch[1], ch[2]].transform, ammo)//Try to hit intended target
+						else
+							IndirectAttack(target))//See if accidentally hit wrong target
+					}
+					break;//Else, no entity is here
+				}
+			}
 		}
-		//base.OrderFire(target, SelectedWeapon.Loaded);
+		//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION
 	}
 
 	public void EventMeleeAttack()

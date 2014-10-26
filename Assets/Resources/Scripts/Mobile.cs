@@ -9,10 +9,6 @@ public class Mobile : MonoBehaviour {
 	public bool isReady = true;
 	public float rate = 2.0f;
 
-	private void Start () 
-	{
-	}
-
 	private void Update () 
 	{
 		if(facing != moveDir)
