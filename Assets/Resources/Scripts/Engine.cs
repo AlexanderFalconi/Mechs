@@ -18,32 +18,44 @@ public class Engine : MonoBehaviour {
 	        for (int y = 0; y < 5; y++) {
 		        for (int x = 0; x < 30; x++) 
 		        {
-		   	 		clone = (Transform)GameObject.Instantiate(grass, new Vector3(x, 0, z), Quaternion.identity);
 		            Grid[x,0,z] = new List<Transform>();
 		            if(y == 0)
 		            {
+			   	 		clone = (Transform)GameObject.Instantiate(grass);
+		            	clone.gameObject.GetComponent<Tile>().SetPosition(new Vector3(x, y, z));
 		            	Grid[x,0,z].Add(clone);
-		            	clone.gameObject.GetComponent<Tile>().SetPosition(x, 0, z);
 		            }
 		        }
 		    }
 	    }
-		mech = (Transform)GameObject.Instantiate(hellfyre, new Vector3(3.0f, 0.0f, 10.0f), Quaternion.identity);
+	    //Add mech
+		mech = (Transform)GameObject.Instantiate(hellfyre);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Alex", 3, 5));
+	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(3.0f, 0.0f, 10.0f), 0);
+	    mech.gameObject.GetComponent<Mech>().ID = "Hellfyre0";
 	    Entities.Add(mech);//add mech to entities list
 	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = mech;//Select this mech
 	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, mech.transform.position, mech.transform.rotation);
 	    boundingBoxOb.parent = mech;//attach bounding box to mech
-		mech = (Transform)GameObject.Instantiate(bushwacker, new Vector3(20.0f, 0.5f, 15.0f), Quaternion.identity);
+	    //Add mech
+		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Mark", 3, 5));
+	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(20.0f, 0.0f, 15.0f), 4);
+	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker0";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
-		mech = (Transform)GameObject.Instantiate(bushwacker, new Vector3(18.0f, 0.5f, 13.0f), Quaternion.identity);
+	    //Add mech
+		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Tom", 4, 4));
+	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(18.0f, 0.0f, 13.0f), 4);
+	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker1";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
-		mech = (Transform)GameObject.Instantiate(bushwacker, new Vector3(16.0f, 0.5f, 14.0f), Quaternion.identity);
+	    //Add mech
+		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Eric", 5, 3));
+	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(16.0f, 0.0f, 14.0f), 4);
+	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker2";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
 		turn = 0;//turn starts with first in list

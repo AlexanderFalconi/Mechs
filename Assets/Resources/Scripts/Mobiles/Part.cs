@@ -38,4 +38,8 @@ public class Part {
 			Proportion["mass"] += mass;
 		}
 	}
+	public int GetMeleeCR()
+	{
+		return 0;
+	}
 }

@@ -3,64 +3,64 @@ using System.Collections.Generic;
 
 public class Mobile : MonoBehaviour {
 	private float turnTo;
-	public Vector3 moveTo, moveDir, facing;
+	public Vector3 moveDir, facing;
+	public List<Vector3> moveTo;
 	public bool isDone = false;
 	public bool isReady = true;
 	public float rate = 2.0f;
 
 	private void Start () 
 	{
-		moveTo = transform.position;
-		facing = new Vector3(1.0f, 0.0f, 0.0f);
-		moveDir = new Vector3(1.0f, 0.0f, 0.0f);
 	}
 
 	private void Update () 
 	{
 		if(facing != moveDir)
 			EventTurn();
-		else if(Vector3.Distance(transform.position, moveTo) > rate)
-			EventMove();
+		else if(moveTo.Count > 0)
+		{
+			if(Vector3.Distance(transform.position, moveTo[0]) > rate)
+				EventMove();
+			else
+				NextMove();
+		}
 	}
 
 	public void EventDestruct()
 	{
-
 	    //GameObject.Instantiate(largeExplosion, transform.position, transform.rotation);
 	    Engine.Entities.Remove(transform);//Remove from initiative
 		Destroy(transform);
 	}
 
-	public void OrderMove(GameObject target)
+	public void NextMove()
 	{
-		moveDir = target.transform.position - transform.position;
-		moveDir.y =0;
-		//Generate a path later, but for now, cram down to one space move
-		if(moveDir.x != 0.0f)
-			moveDir.x /= Mathf.Abs(moveDir.x);
-		if(moveDir.z != 0.0f)
-			moveDir.z /= Mathf.Abs(moveDir.z);
-		moveTo = transform.position + moveDir;
-        Vector3 dir = Vector3.Cross(facing, moveDir);
-        if(dir.y > 0.0f)
-			turnTo = Vector3.Angle(facing, moveDir);
+		moveTo.RemoveAt(0);
+		if(moveTo.Count > 0)
+		{
+			moveDir = moveTo[0] - transform.position;
+			moveDir.y =0;
+	        Vector3 dir = Vector3.Cross(facing, moveDir);
+	        if(dir.y > 0.0f)
+				turnTo = Vector3.Angle(facing, moveDir);
+			else
+				turnTo = -Vector3.Angle(facing, moveDir);
+		}
 		else
-			turnTo = -Vector3.Angle(facing, moveDir);
+			isReady = true;
 	}
 
 	public void OrderFire(GameObject target, Ammunition bullet)
 	{
 		Transform clone = (Transform)GameObject.Instantiate(Resources.Load(bullet.PrefabID), transform.position, transform.rotation); 
 		Debug.Log(target.transform.position);
-		clone.gameObject.GetComponent<Mobile>().moveTo = target.transform.position;
+		//clone.gameObject.GetComponent<Mobile>().moveTo = target.transform.position;
 	}
 
 	private void EventMove()
 	{
         float step = rate * Time.deltaTime;
-        transform.position = Vector3.MoveTowards(transform.position, moveTo, step);		
-		if(facing == moveDir)
-			isReady = true;
+        transform.position = Vector3.MoveTowards(transform.position, moveTo[0], step);		
 	}
 
 	private void EventTurn()

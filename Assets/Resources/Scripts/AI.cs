@@ -13,7 +13,7 @@ public class AI : MonoBehaviour {
 	
 	public void SimpleAction()
 	{
-		Selected.GetComponent<Mech>().OrderFire(GameObject.FindWithTag("Player").transform.GetChild(0).gameObject);
+		//Selected.GetComponent<Mech>().OrderFire(GameObject.FindWithTag("Player").transform.GetChild(0).gameObject);
 		Selected.GetComponent<Mech>().isDone = true;
 	}
 }

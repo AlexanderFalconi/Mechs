@@ -10,15 +10,27 @@ public class Mech : Mobile {
 	private Chassis InternalStructure;
 	public Pilot PilotOb;
 	public Weapon SelectedWeapon;
-	public Vector3 Pos;
+	public Vector3 Position;
 	public int Face;
+	public string ID;
 
 	public Mech() 
 	{
-		//Hardcode movement temporarily
-		Speed["jump"] = 1;//Actually jump jet based
-		Speed["walk"] = 3;//Energy/reactor based
-		Speed["run"] = 5;
+
+	}
+
+	public string GetID()
+	{
+		return ID;
+	}
+
+	public void SetPosition(Vector3 pos, int face)
+	{
+		Position = pos;
+		Face = face;
+		transform.position = pos;
+		Debug.Log(transform.rotation);
+		Debug.Log(transform.position);
 	}
 
 	public void SetPilot(Pilot pilot)
@@ -95,19 +107,19 @@ public class Mech : Mobile {
 		//Reset firing
 	}
 
-	public void OrderMove(GameObject target)
+	public void OrderMove(Vector3 pos)
 	{
+		List<Vector3> tmp;
 		Debug.Log(isReady);
-		Debug.Log(Speed);
-		if((isReady == false) || (Speed["moved"] >= Speed["run"]))
-			return;//Can't move anymore
+		if(isReady == false)
+			return;//Can't move
 		else
 		{
 			Speed["moved"]++;
 			isReady = false;
 		}
-		base.OrderMove(target);
-	}
+		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
+	}	
 
 	public void EventJump()
 	{
@@ -118,10 +130,49 @@ public class Mech : Mobile {
 		Posture = 1;
 	}
 
-	public void OrderFire(GameObject target)
-	{
-		//This needs to set and follow a route, checking targets along the way.
-		base.OrderFire(target, SelectedWeapon.Loaded);
+	public void OrderFire(Mech target)
+	{//direct fire
+		GetDirectSteps(Position, target.Position);
+		//base.OrderFire(target, SelectedWeapon.Loaded);
+	}
+
+	public void OrderFire(Vector3 target)
+	{//indirect fire
+		List<Vector3> steps = GetDirectSteps(Position, target);
+		Dictionary<string,Dictionary<string,int>> partial = new Dictionary<string,Dictionary<string,int>>(); 
+		//{
+		//	{"x", {{"+", 0}, {"-", 0}}},{"y", {{"+", 0}, {"-", 0}}},{"z", {{"+", 0}, {"-", 0}}}
+		//};
+		foreach(Vector3 step in steps)
+		{//For each step in the path
+			float xP, yP, zP;
+			partial["x"]["-"] = Mathf.Floor(step.x);
+			partial["x"]["+"] = Mathf.Ceil(step.x);
+			partial["x"]["-~"] = 1.0f - step.x%1.0f;
+			partial["x"]["+~"] = step.x%1.0f;
+			partial["y"]["-"] = Mathf.Floor(step.y);
+			partial["y"]["+"] = Mathf.Ceil(step.y);
+			partial["y"]["-~"] = 1.0f - step.x%1.0f;
+			partial["y"]["+~"] = step.x%1.0f;
+			partial["z"]["-"] = Mathf.Floor(step.z);
+			partial["z"]["+"] = Mathf.Ceil(step.z);
+			zP = step.z%1.0f;
+			for(int y = partial["y"]["-"]; y <= partial["y"]["+"]; y++)
+			{
+				//float chanceY = 
+				for(int z = partial["z"]["-"]; z <= partial["z"]["+"]; z++)
+				{
+					for(int x = partial["x"]["-"]; x<= partial["x"]["+"]; x++)
+					{
+						//float chance = 
+					}
+				}
+	
+			}
+			//if()
+			//Engine.Grid[]
+		}
+		//base.OrderFire(target, SelectedWeapon.Loaded);
 	}
 
 	public void EventMeleeAttack()
@@ -129,13 +180,19 @@ public class Mech : Mobile {
 		//pilot after kick charge crush attacks
 	}
 
-    public void EventMeleeAttack(Mech target, Component limb)
+    public void EventMeleeAttack(Mech target, Part limb)
     {
         float result;
-        int accuracy = PilotOb.Piloting + limb.MeleePenalty;//kick +0; punch push +1; charge +2
+        int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
     }
 
 	private void EventRangedAttack(Mech target, Ammunition ammo)
+	{
+
+
+	}
+
+	private void EventAttack(Mech target, Ammunition ammo)
 	{
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
 		accuracy += GetRangePenalty();
@@ -340,5 +397,43 @@ public class Mech : Mobile {
 			return 3;//in midair
 		else
 			return 2;//is running
+	}
+
+	public List<Vector3> GetDirectSteps(Vector3 from, Vector3 to)
+	{
+		float dX = to.x - from.x;
+		float dZ = to.z - from.z;
+		float slope;
+		Debug.Log("ENTERE");
+		List<Vector3> path = new List<Vector3>();
+		if(Mathf.Abs(dZ) > Mathf.Abs(dX))
+		{
+			slope = dX/dZ;
+			for(var i = 0; i < dZ; i++)
+			{
+				from.z++;
+				from.x+=slope;
+				path.Add(from);
+			}
+		}
+		else
+		{
+			slope = dZ/dX;
+			for(var i = 0; i < dX; i++)
+			{
+				from.x++;
+				from.z+=slope;
+				path.Add(from);
+			}
+		}
+		return path;
+	}
+
+	public List<Vector3> GetMovementPath(List<Vector3> steps)
+	{//Simplified pathing algorithm
+		List<Vector3> path = new List<Vector3>();
+		foreach(Vector3 step in steps)
+			path.Add(new Vector3(Mathf.Round(step.x), Mathf.Round(step.y), Mathf.Round(step.z)));
+		return path;
 	}
 }

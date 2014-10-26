@@ -2,11 +2,13 @@
 using System.Collections;
 
 public class Tile : MonoBehaviour {
-	public int[] position;
+	public Vector3 Position;
+	public string ID;
 
 	// Use this for initialization
-	void Start () {
-		
+	public string GetID()
+	{
+		return "Tile"+(int)Position.x+"-"+(int)Position.y+"-"+(int)Position.z;
 	}
 	
 	public int GetDodge()
@@ -19,11 +21,9 @@ public class Tile : MonoBehaviour {
 		audio.Play();
 	}
 
-	public void SetPosition(int x, int y, int z)
+	public void SetPosition(Vector3 pos)
 	{
-		position = new int[3];
-		position[0] = x;
-		position[1] = y;
-		position[2] = z;
+		Position = pos;
+		transform.position = pos;
 	}
 }

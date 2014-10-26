@@ -19,7 +19,10 @@ public class Player : MonoBehaviour {
 	 
 			if( Physics.Raycast( ray, out hit, 100 ) )
 			{
-				Selected.GetComponent<Mech>().OrderMove(hit.transform.gameObject);
+				if(hit.transform.GetComponent<Mech>() != null)
+					Selected.GetComponent<Mech>().OrderMove(hit.transform.GetComponent<Mech>().Position);
+				else
+					Selected.GetComponent<Mech>().OrderMove(hit.transform.GetComponent<Tile>().Position);				
 			}
 		}
 
@@ -27,10 +30,12 @@ public class Player : MonoBehaviour {
 		{//Right click
 			Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 			RaycastHit hit;
-	 
 			if( Physics.Raycast( ray, out hit, 100 ) )
 			{
-				Selected.GetComponent<Mech>().OrderFire(hit.transform.gameObject);
+				if(hit.transform.GetComponent<Mech>() != null)
+					Selected.GetComponent<Mech>().OrderFire(hit.transform.GetComponent<Mech>());
+				else
+					Selected.GetComponent<Mech>().OrderFire(hit.transform.position);				
 			}
 		}
 	}
