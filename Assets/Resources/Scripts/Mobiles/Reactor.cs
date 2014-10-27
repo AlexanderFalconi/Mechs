@@ -24,9 +24,10 @@ public class Reactor : Component
 		Energy = energy;
 	}
 
-	public float GetEfficiency()
+	public float EventGeneratePower()
 	{
-		return 100 - Status;
+		float efficiency = 100.0f - (float)Status;
+		return Energy * efficiency;
 	}
 
     public void EventDamage(int dmg)

@@ -4,12 +4,6 @@ using System.Collections;
 public class Tile : MonoBehaviour {
 	public Vector3 Position;
 	public string ID;
-
-	// Use this for initialization
-	public string GetID()
-	{
-		return "Tile"+(int)Position.x+"-"+(int)Position.y+"-"+(int)Position.z;
-	}
 	
 	public int GetDodge()
 	{

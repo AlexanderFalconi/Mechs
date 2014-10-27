@@ -1,15 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class AmmoExplosion : Ammunition
+public class Bludgeoning : Ammunition 
 {
 	public int Damage;
-	public string DamageType = "explosive";
+	public string DamageType = "impact";
 	static public List<string> Ammo = new List<string>();
 
-	public AmmoExplosion(int damage)
+	public Bludgeoning(int damage)
 	{
 		Damage = damage;
-		Range = 0;
+		Range = 1;
 	}
 }

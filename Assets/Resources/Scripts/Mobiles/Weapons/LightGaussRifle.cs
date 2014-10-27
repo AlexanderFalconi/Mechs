@@ -1,17 +1,22 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class LightGaussRifle : Weapon 
 {
 	public string Short = "Light Gauss Rifle";
 	public string Long = "An rail gun that propels 8cc slugs by magnetic coils.";
-	public int Capacity = 1;
 	public int RateOfFire = 1;
-	public List<string> Ammo = new List<string>() {"8cc Slug"};
 	public string[] Compatibility = new string[] {"head", "left arm", "right arm", "left leg", "right leg", "left torso", "right torso", "center torso"};
-	public GaussRifle()
+	public LightGaussRifle()
 	{
-		Energy = new Dictionary<string,int>() {{"fire",5}, {"reload",1}};
+		Capacity = 1;
+		Ammo = new List<string>() {"8cc Slug"};
+		Energy = new Dictionary<string,float>() {{"fire",5.0f}, {"reload",1.0f}};
 		SetMass(3.5f);
 	}
+
+    public void EventDamage()
+    {//Override
+    	Installed.EventDamage(new AmmoExplosion(10));//Component explodes!
+    }
 }

@@ -11,7 +11,7 @@ public class LeftTorso : Part
 	}
 	public float[] GetFiringArc()
 	{
-		float[] arc = {285.0f, 0.0f};
+		float[] arc = new float[] {285.0f, 0.0f};
 		return arc;
 	}
 }

@@ -14,7 +14,7 @@ public class CenterTorso : Part
 	
 	public float[] GetFiringArc()
 	{
-		float[] arc = {322.5f, 37.5f};
+		float[] arc = new float[] {322.5f, 37.5f};
 		return arc;
 	}
 
@@ -22,5 +22,14 @@ public class CenterTorso : Part
 	{
 		return 2;//Used for charge, pounce
 	}
-}
 
+	public int GetMeleeDamage()
+	{
+		return Mathf.FloorToInt(Master.GetMass() / 10.0f) * Master.Speed["momentum"];
+	}
+
+	public void EventMeleeBacklash()
+	{
+		EventDamage(new Bludgeoning(Mathf.FloorToInt(Master.GetMass() / 10.0f) * Master.Speed["momentum"]));
+	}
+}

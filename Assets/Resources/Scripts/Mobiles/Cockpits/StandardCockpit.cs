@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class StandardCockpit : Component {
+public class StandardCockpit : Cockpit 
+{
 	public string Short = "Standard Cockpit";
 	public string Long = "A standard cockpit made of reinforced steel. It can house a single pilot and features a manual ejection lever.";
 	private int Capacity = 1;

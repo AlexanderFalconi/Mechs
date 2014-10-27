@@ -28,4 +28,10 @@ public class Pilot {
 		else
 			Conscious = false;		
 	}
+
+	public void EventKilled()
+	{
+		HP = 0;
+		Conscious = false;
+	}
 }

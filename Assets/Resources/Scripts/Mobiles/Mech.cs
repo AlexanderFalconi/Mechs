@@ -4,28 +4,23 @@ using System.Collections.Generic;
 public class Mech : Mobile {
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
+	public List<Weapon> Weapons = new List<Weapon>();
 	private int Posture = 1;//0: prone, 1: stand, 2: jump
 	public int Size = 0;//1: infantry, 2: suit, 3: car, 4: tank, 5: light mech, 6: medium mech, 7: heavy mech, 8: small structure, 9: large structure, 10: tile
 	private float Mass = 0.0f;
+	public float Energy = 0.0f;
+	public float Rotation, Stabilization, Balance, Mobility, Locomotion;//Mech attributes
 	private Chassis InternalStructure;
 	public Pilot PilotOb;
 	public Weapon SelectedWeapon;
 	public Vector3 Position;
 	public int Face;
-	public string ID;
-
-	public string GetID()
-	{
-		return ID;
-	}
 
 	public void SetPosition(Vector3 pos, int face)
 	{
 		Position = pos;
 		Face = face;
 		transform.position = pos;
-		Debug.Log(transform.rotation);
-		Debug.Log(transform.position);
 	}
 
 	public void SetPilot(Pilot pilot)
@@ -69,6 +64,11 @@ public class Mech : Mobile {
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
 	}
 
+	public float GetMass()
+	{
+		return Mass;
+	}
+
 	public float AddComponent(string limb, Component part)
 	{
 		return Body[limb].Install(part);
@@ -81,15 +81,15 @@ public class Mech : Mobile {
 
 	public string GetClass()
 	{
-		if(Mass < 10.0f)
+		if(GetMass() < 10.0f)
 			return "Ultra-Light";
-		else if(Mass <= 20.0f)
+		else if(GetMass() <= 20.0f)
 			return "Super-Light";
-		else if(Mass <= 40.0f)
+		else if(GetMass() <= 40.0f)
 			return "Light";
-		else if(Mass <= 70.0f)
+		else if(GetMass() <= 70.0f)
 			return "Medium";
-		else if(Mass <= 90.0f)
+		else if(GetMass() <= 90.0f)
 			return "Heavy";
 		else// if(Mass <= 100.0f)
 			return "Super-Heavy";
@@ -99,122 +99,190 @@ public class Mech : Mobile {
 	{
 		Speed["momentum"] = 0;
 		Speed["moved"] = 0;
-		//Reset firing
+		foreach(Weapon weapon in Weapons)
+			weapon.Discharged = 0;//Reset firing
+		if(!PilotOb.Conscious)
+		{//Knocked out
+			PilotOb.EventConsciousness();//Try to wake up
+			isDone = true;//Skip this turn
+		}
+		Energy = 0;//Later on create alternate component and store power in batteries
+		foreach(KeyValuePair<string,Part> gen in Body)
+			Energy += gen.Value.EventGeneratePower();
 	}
 
 	public void OrderMove(Vector3 pos)
 	{
 		List<Vector3> tmp;
-		Debug.Log(isReady);
 		if(isReady == false)
 			return;//Can't move
-		else
-		{
-			Speed["moved"]++;
-			isReady = false;
-		}
+		isReady = false;
 		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
 	}	
 
-	public void EventJump()
+	public void OrderJump(Vector3 pos)
 	{
+		List<Vector3> tmp;
+		if(isReady == false)
+			return;//Can't move
 		if(Posture == 0)
-			return;//Can't jump while prone
-		Posture = 2;
-		//event move
-		Posture = 1;
-	}
+			return;//Can't jump while pron
+		Posture = 2;//Airborne
+		isReady = false;
+		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
+	}	
 
-	public void OrderFire(Mech target)
-	{//direct fire
-		GetDirectSteps(Position, target.Position);
-		//base.OrderFire(target, SelectedWeapon.Loaded);
-	}
-
-	//Standard actuator puts out 50 force per ton. ratio of total mass to actuator outage is speed. i.e. 1T outputs 50 so for 10T mech thats ratio 5.0 for speed 5.
-	//energy to walk within ratio, mass*spd; to run its doubling up each step.
-
-	//arm actuator, same rating to move arm, excess factors into climbing and punching
-	//so extra does move into punch damage
-	//hand actuator allows grabbing; safe to punch or claw
-	//hip actuator allows for rotating twisting
-	//foot actuator allows balancing, safely kicking
-	
-
-	public void OrderFire(Vector3 target)
-	{//indirect fire
-		float result;
-		List<Vector3> steps = GetDirectSteps(Position, target);
-		Dictionary<string,float[2]> scan = new Dictionary<string,float[2]>() {{"x", {0.0f, 0.0f}},{"y", {0.0f, 0.0f}},{"z", {0.0f, 0.0f}}};
-		Dictionary<string,float[2]> partial = new Dictionary<string,float[2]>() {{"x", {0.0f, 0.0f}},{"y", {0.0f, 0.0f}},{"z", {0.0f, 0.0f}}};
-		List<float[]> chance;
-		foreach(Vector3 step in steps)
-		{//For each step in the path
-			chance = new List<float[]>();
-			scan["x"][0] = Mathf.Floor(step.x);
-			scan["x"][1] = Mathf.Ceil(step.x);
-			partial["x"][0] = 1.0f - step.x%1.0f;
-			partial["x"][1] = step.x%1.0f;
-			scan["y"][0] = Mathf.Floor(step.y);
-			scan["y"][1] = Mathf.Ceil(step.y);
-			partial["y"][0] = 1.0f - step.y%1.0f;
-			partial["y"][1] = step.y%1.0f;
-			scan["z"][0] = Mathf.Floor(step.z);
-			scan["z"][1] = Mathf.Ceil(step.z);
-			partial["z"][0] = 1.0f - step.z%1.0f;
-			partial["z"][1] = step.z%1.0f;
-			for(int y = 0; y <= 1; y++)
-			{//foreach possible tile that could be hit, get a random chance and assign to the tile
-				for(int z = 0; z <= 1; z++)
-				{
-					for(int x = 0; x <= 1; x++)
-						chance.Add(new float[] {x, y, z, scan["x"][x]*partial["x"][x]*scan["y"][y]*partial["y"][y]*scan["z"][z]*partial["z"][z]});
-				}
-			}
-			result = Random.Range(0.1f, 100.0f);
-			foreach(float[] ch in chance)
-			{//Take the random chances to hit each tile, and find the tile that's hit
-				result -= ch[3];
-				if(result <= 0)
-				{//Found the tile to hit, see if an entity is there
-					if(Engine.Grid[ch[0], ch[1], ch[2]] != null)//An entity is here
-					{
-						Mech potential = Engine.Grid[ch[0], ch[1], ch[2]];
-						if(potential == target)
-							EventRangedAttack(Engine.Grid[ch[0], ch[1], ch[2]].transform, ammo)//Try to hit intended target
-						else
-							IndirectAttack(target))//See if accidentally hit wrong target
+	public void OrderFire(Transform target, Weapon weapon, int shots)
+	{
+		if(!CanFire(weapon, target.position))
+			return;
+		Ammunition ammo = weapon.Loaded;
+		if(ammo.Amount < shots)
+			shots = ammo.Amount;
+		for(int i = 0; i < shots; i++)
+		{
+			if(ammo.EventDischarge())
+			{
+				float result;
+				List<Vector3> steps = GetDirectSteps(Position, target.GetComponent<Mech>().Position);
+				Dictionary<string,float[]> scan = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f} },{"y", new float[] {0.0f, 0.0f} },{"z", new float[] {0.0f, 0.0f} }};
+				Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
+				List<float[]> chance;
+				foreach(Vector3 step in steps)
+				{//For each step in the path
+					chance = new List<float[]>();
+					scan["x"][0] = Mathf.Floor(step.x);
+					scan["x"][1] = Mathf.Ceil(step.x);
+					partial["x"][0] = 1.0f - step.x%1.0f;
+					partial["x"][1] = step.x%1.0f;
+					scan["y"][0] = Mathf.Floor(step.y);
+					scan["y"][1] = Mathf.Ceil(step.y);
+					partial["y"][0] = 1.0f - step.y%1.0f;
+					partial["y"][1] = step.y%1.0f;
+					scan["z"][0] = Mathf.Floor(step.z);
+					scan["z"][1] = Mathf.Ceil(step.z);
+					partial["z"][0] = 1.0f - step.z%1.0f;
+					partial["z"][1] = step.z%1.0f;
+					for(int y = 0; y <= 1; y++)
+					{//Foreach possible tile that could be hit, get a random chance and assign to the tile
+						for(int z = 0; z <= 1; z++)
+						{
+							for(int x = 0; x <= 1; x++)
+								chance.Add(new float[] {x, y, z, scan["x"][x]*partial["x"][x]*scan["y"][y]*partial["y"][y]*scan["z"][z]*partial["z"][z]});
+						}
 					}
-					break;//Else, no entity is here
+					result = Random.Range(0.1f, 100.0f);
+					foreach(float[] ch in chance)
+					{//Take the random chances to hit each tile, and find the tile that's hit
+						result -= ch[3];
+						if(result <= 0)
+						{//Found the tile to hit, see if an entity is there
+							if(Engine.Grid[(int)ch[0],(int)ch[1],(int)ch[2]] != null)//An entity is here
+							{
+								Transform potential = Engine.Grid[(int)ch[0], (int)ch[1], (int)ch[2]][0];//Takes the first element of the list for now
+								if(potential == target)
+									EventRangedAttack(target, ammo);//Try to hit intended target
+								else
+									EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
+							}
+							break;//Else, no entity is here
+						}
+					}
 				}
+				//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION				
 			}
 		}
-		//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION
 	}
 
-	public void EventMeleeAttack()
+	//handle amo expenditure
+
+	public void OrderReload(Weapon weapon, int max)
 	{
-		//pilot after kick charge crush attacks
+		if(CanReload(weapon))
+			weapon.EventReload(max);
 	}
 
-    public void EventMeleeAttack(Mech target, Part limb)
+	public bool CanFire(Weapon weapon, Vector3 target)
+	{
+		float[] arc = new float[2];
+		float degree;
+		if(Energy < weapon.Energy["fire"])
+			return false;//Not enough energy
+		arc = weapon.Installed.GetFiringArc();
+		degree = Vector3.Angle(Position, target);
+		if(degree < arc[0] || degree > arc[1])
+			return true;
+		else
+			return false;
+	}
+
+	public bool CanReload(Weapon weapon)
+	{
+		if(Energy < weapon.Energy["reload"])
+			return false;//Not enough energy
+		else
+			return false;
+	}
+
+	public void EventLand()
+	{
+		Posture = 1;//Land
+		if(Engine.Grid[(int)Position.x,(int)Position.y,(int)Position.z].Count > 0)
+		{//There's another mech in this space
+			if(!EventManeuver(2))//Try to avoid falling
+				EventFall(1);//Failed, fall
+		}
+	}
+
+    public void EventMeleeAttack(Transform target, Part limb)
     {
         float result;
         int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
+        Ammunition simulate = new Bludgeoning(limb.GetMeleeDamage());
+		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
+		{
+	 		EventDamage(target.GetComponent<Mech>(), simulate);//If actually hit
+	 		limb.EventBacklash();//Sometimes can hurt self
+ 		}
     }
 
-	private void EventRangedAttack(Mech target, Ammunition ammo)
-	{
+    public void EventCollisionAttack(Transform target)
+    {
+        float result;
+        int accuracy = PilotOb.Piloting - target.GetComponent<Mech>().PilotOb.Piloting + Body["center torso"].GetMeleeCR();
+        Ammunition cluster;
+		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
+		{
+			target.GetComponent<Mech>().EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
+		 	Body["center torso"].EventBacklash();//Sometimes can hurt self
+		}
+    }
 
+    public void EventCollision(int damage)
+    {
+        Ammunition cluster;
+		while(damage > 0)
+		{
+			if(damage > Mathf.FloorToInt(GetMass()/10.0f))
+			{
+				cluster = new Bludgeoning(Mathf.FloorToInt(GetMass()/10.0f));
+				damage -= cluster.Amount;
+			}
+			else
+			{
+				cluster = new Bludgeoning(damage);
+				damage = 0;
+			}
+	 		EventDamage(this, cluster);//If actually hit
+		}
+    }    
 
-	}
-
-	private void EventAttack(Mech target, Ammunition ammo)
-	{
+	public float EventRangedAttack(Transform target, Ammunition ammo)
+	{//Indirect fire
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
-		accuracy += GetRangePenalty();
+		accuracy += GetRangePenalty(target, ammo);
 		accuracy += GetMovementPenalty();
-		accuracy += GetAccuracyPenalty();//Lost actuators or other circumstances
+		accuracy += GetAccuracyPenalty(ammo);//Lost actuators or other circumstances
 		if(target.tag != "Tile")
 			accuracy += target.GetComponent<Mech>().GetDodge();//not yet set
 		if(accuracy > 11)
@@ -222,33 +290,76 @@ public class Mech : Mobile {
 		else if(accuracy < 0)
 			accuracy = 0;
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
-		{
-			if(target.EventDamage(this, ammo) >= Mass)
-			{
-				if(EventManeuver(0))
-					EventFall(1);
-			}			
-		}
+			return target.GetComponent<Mech>().EventDamage(this, ammo);
+		else
+			return 0.0f;
 	}
 
-	//if pilot is unconscious check again at every turn
-	//where is cockpit? handle hits to that component (head) with a pilot damage roll?
+	public float EventIndirectAttack(Transform potential, Ammunition ammo)
+	{//Indirect fire
+		if(Random.Range(0.1f, 100.0f) <= potential.GetComponent<Mech>().Size*potential.GetComponent<Mech>().Size)
+			return potential.GetComponent<Mech>().EventDamage(this, ammo);
+		else
+			return 0.0f;
+	}
 
-	private void EventCollisionDamage(Mech target)
+
+	public void UpdateActuators()
 	{
-		//use a subtraction algorithm between facing and nonfacing to determine the hit table
-		//break damage into clusters
+		Balance = Stabilization = Rotation = Mobility = 0.0f;
+		foreach(KeyValuePair<string,Part> item in Body)
+		{
+			foreach(Component component in item.Value.Components)
+			{
+				Balance += component.GetBalance();
+				Stabilization += component.GetStabilization();
+				Rotation += component.GetRotation();
+				Mobility += component.GetMobility();
+				Locomotion += component.GetLocomotion();
+			}
+		}
+		Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
+		Speed["run"] = Speed["walk"] *3 / 2;
+	}
+
+	public float GetMovementPower()
+	{
+		if(Speed["moved"] < Speed["walk"])
+			return Mass;
+		else
+			return (Speed["moved"] - Speed["walk"] + 1) * GetMass();
+	}
+
+	public void EventStand()
+	{
+		Speed["moved"] += 2;
+		if(EventManeuver(0))
+			Posture = 1;//else failed to stand
+	}
+
+	private void EventFall(int height)
+	{
+		Face = Random.Range(0,7); 
+		EventDamage(this, new Bludgeoning(Mathf.FloorToInt(GetMass()/10*height)));
+		if(!EventManeuver(height))
+			PilotOb.EventDamage(1);
+	}
+
+	public bool CanMove(int amount)
+	{
+		if(Speed["moved"] == 0 || (Speed["moved"] + amount <= Speed["run"]))
+			return true;
+		else
+			return false;
 	}
 
 	public int EventDamage(Mech attacker, Ammunition ammo)
 	{
-		int inflicted = 0;
-		int crit = 0;
 		audio.Play();//TEMP: this should be moved to render
 		string table = GetHitTable(attacker);//Get hit table
 		string location = "none";
 		string side = "external";//Flag to take from ordinary external
-		int result, damage, damageR, hardness;
+		int result;
 		if(table == "rear")
 		{
 			side = "rear";//Flag to take from rear armor
@@ -264,50 +375,7 @@ public class Mech : Mobile {
 				break;//Done
 			}
 		}
-		hardness = Body[location].Armors[side].Hardness[ammo.DamageType];
-		if(ammo.Damage < Body[location].Armors[side].Hardness[ammo.DamageType])
-		{
-			ammo.Damage = 0;
-			return 0;//Armor absorbs the blow, but its ineffective.
-		}
-		damage = ammo.Damage / hardness;//Convert to relative damage based on armor hardness
-		damageR = ammo.Damage % hardness;//The remainder does not necessary truncate
-		result = Random.Range(1, hardness);//Chance of it applying depends on how high
-		if(result <= damageR)//Check to see if extra damage
-			damage++;//Add 1 extra damage
-		if(Body[location].Armors[side].HP >= damage)
-		{//External armor soaks
-			inflicted += damage;//Record damage
-			damage = 0;
-			Body[location].Armors[side].HP -= damage;
-			ammo.Damage = 0;//Armor absorbs the blow
-		}
-		else
-		{
-			inflicted += Body[location].Armors[side].HP;//Record damage
-			damage -= Body[location].Armors[side].HP;
-			ammo.Damage -= Body[location].Armors[side].HP * hardness;//Absorm some of the blow
-			Body[location].Armors[side].HP = 0;//Shear off all armor
-			if(Body[location].Armors["internal"].HP >= damage)
-			{//Internal armor soaks
-				inflicted += damage;//Record damage
-				crit = damage;
-				Body[location].Armors["internal"].HP -= damage;
-				ammo.Damage = 0;
-			}
-			else
-			{
-				crit = Body[location].Armors["internal"].HP;
-				inflicted += Body[location].Armors["internal"].HP;//Record damage
-				damage -= Body[location].Armors["internal"].HP;
-				ammo.Damage -= Body[location].Armors["internal"].HP * hardness;//Absorm some of the blow
-				Body[location].Armors["internal"].HP = 0;//Shear off all armor
-				//TEMP: Damage transfer into mech?
-			}
-		}
-		if(crit > 0)
-			EventCritical(location, crit);//Check for crits last because of possible ammo explosions
-		return inflicted;
+		return Body[location].EventDamage(ammo, side);
 	}
 
 	private string GetHitTable(Mech other)
@@ -325,47 +393,19 @@ public class Mech : Mobile {
 			return "none";
 	}
 
-	private void EventCritical(string location, int damage)
-	{
-		float possible = Body[location].Proportion["max mass"];
-		float result;
-		//THIS DAMAGE NEEDS TO BE STACKED
-		for(int i = 0; i < damage; i++)
-		{
-			result = Random.Range(0.0f, possible);
-			foreach(Component item in Body[location].Components)
-			{
-				result -= item.GetMass();
-				if(result <= 0)
-					item.EventDamage(1);
-			}
-		}
-	}
-
 	public bool EventManeuver(int dc)
 	{
 		int attempt = PilotOb.Piloting + dc;
-		//apply actuator issues and other conditionals
+		if(Stabilization/GetMass() < 0.25f)
+			attempt += 4;
+		else if(Stabilization/GetMass() < 0.5f)
+			attempt += 2;
+		else if(Stabilization/GetMass() < 1.0f)
+			attempt += 1;
 		if(Random.Range(0.0f, 100.0f) <= Engine.GetThreshold(attempt))
 			return true;
 		else
 			return false;
-	}
-
-	public void EventStand()
-	{
-		//costs 2 MP or minimum movement
-		if(EventManeuver(0))
-			Posture = 1;
-		//else failed to stand
-	}
-
-	private void EventFall(int height)
-	{
-		Face = Random.Range(0,7); 
-		//EventCollisionDamage(Mathf.Floor(Mass/10*height));
-		if(!EventManeuver(height))
-			PilotOb.EventDamage(1);
 	}
 
 	public int GetDodge()
@@ -392,16 +432,15 @@ public class Mech : Mobile {
 			return 9;
 	}
 
-	public int GetAccuracyPenalty()
+	public int GetAccuracyPenalty(Ammunition ammo)
 	{
-		//if(Speed["moved"] == 0)
-			return 0;//no penalty
+		return ammo.Installed.GetAccuracy();
 	}
 
-	public int GetRangePenalty()
+	public int GetRangePenalty(Transform target, Ammunition ammo)
 	{
-		//if(Speed["moved"] == 0)
-			return 0;//no penalty
+		float distance = Vector3.Distance(transform.position, target.position);
+		return Mathf.FloorToInt(distance/ammo.Range);
 	}
 
 	public int GetMovementPenalty()
@@ -421,7 +460,6 @@ public class Mech : Mobile {
 		float dX = to.x - from.x;
 		float dZ = to.z - from.z;
 		float slope;
-		Debug.Log("ENTERE");
 		List<Vector3> path = new List<Vector3>();
 		if(Mathf.Abs(dZ) > Mathf.Abs(dX))
 		{

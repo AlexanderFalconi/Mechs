@@ -12,7 +12,7 @@ public class LeftLeg : Part
 	}
 	public float[] GetFiringArc()
 	{
-		float[] arc = {285.0f, 0.0f};
+		float[] arc = new float[] {285.0f, 0.0f};
 		return arc;
 	}
 	public int GetMeleeCR()
@@ -22,7 +22,7 @@ public class LeftLeg : Part
 
 	public float GetBalance()
 	{
-		float balance;
+		float balance = 0.0f;
 		foreach(Component item in Components)
 			balance += item.GetBalance();
 		return Mathf.Floor(balance/Master.GetMass());
@@ -30,7 +30,7 @@ public class LeftLeg : Part
 
 	public float GetMobility()
 	{
-		float mobility;
+		float mobility = 0.0f;
 		foreach(Component item in Components)
 			mobility += item.GetMobility();
 		return Mathf.Floor(mobility/Master.GetMass());
@@ -38,9 +38,25 @@ public class LeftLeg : Part
 
 	public float GetLocomotion()
 	{
-		float locomotion;
+		float locomotion = 0.0f;
 		foreach(Component item in Components)
 			locomotion += item.GetLocomotion();
 		return Mathf.Floor(locomotion/Master.GetMass());
+	}
+
+	public int GetMeleeDamage()
+	{
+		return (int)Proportion["mass"];
+	}
+
+	public void EventMeleeBacklash()
+	{
+		Master.EventManeuver(0);//Balance after a kick
+		foreach(Component item in Components)
+		{
+			if(item.IsMeleeWeapon())
+				return;//Found hand actuator or similar, no self damage
+		}
+		EventDamage(new Bludgeoning(Mathf.FloorToInt(Proportion["mass"])));
 	}
 }

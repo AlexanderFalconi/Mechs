@@ -32,30 +32,26 @@ public class Engine : MonoBehaviour {
 		mech = (Transform)GameObject.Instantiate(hellfyre);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Alex", 3, 5));
 	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(3.0f, 0.0f, 10.0f), 0);
-	    mech.gameObject.GetComponent<Mech>().ID = "Hellfyre0";
 	    Entities.Add(mech);//add mech to entities list
 	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = mech;//Select this mech
-	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, mech.transform.position, mech.transform.rotation);
+	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, mech.transform.position, Quaternion.identity);
 	    boundingBoxOb.parent = mech;//attach bounding box to mech
 	    //Add mech
 		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Mark", 3, 5));
 	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(20.0f, 0.0f, 15.0f), 4);
-	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker0";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
 	    //Add mech
 		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Tom", 4, 4));
 	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(18.0f, 0.0f, 13.0f), 4);
-	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker1";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
 	    //Add mech
 		mech = (Transform)GameObject.Instantiate(bushwacker);
 		mech.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Eric", 5, 3));
 	    mech.gameObject.GetComponent<Mech>().SetPosition(new Vector3(16.0f, 0.0f, 14.0f), 4);
-	    mech.gameObject.GetComponent<Mech>().ID = "Bushwacker2";
 		mech.gameObject.AddComponent<AI>();
 	    Entities.Add(mech);//add mech to entities list
 		turn = 0;//turn starts with first in list
@@ -75,7 +71,6 @@ public class Engine : MonoBehaviour {
 			if(turn >= Entities.Count)
 				turn = 0;
 			boundingBoxOb.position = Entities[turn].position;
-			boundingBoxOb.rotation = Entities[turn].rotation;
 		}
 	}
 

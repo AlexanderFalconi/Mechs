@@ -11,7 +11,7 @@ public class Head : Part
 	}
 	public float[] GetFiringArc()
 	{
-		float[] arc = {202.5f, 62.5f};
+		float[] arc = new float[] {202.5f, 62.5f};
 		return arc;
 	}
 }
