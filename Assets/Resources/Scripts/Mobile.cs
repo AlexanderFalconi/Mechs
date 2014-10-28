@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Mobile : MonoBehaviour {
 	private float turnTo;
-	public Vector3 moveDir, facing;
+	public Vector3 moveDir, faceDir;
 	public List<Vector3> moveTo;
 	public bool isDone = false;
 	public bool isReady = true;
@@ -11,11 +11,11 @@ public class Mobile : MonoBehaviour {
 
 	private void Update () 
 	{
-		if(facing != moveDir)
+		if(faceDir != moveDir)
 			EventTurn();
 		else if(moveTo.Count > 0)
 		{
-			if(Vector3.Distance(transform.position, moveTo[0]) > rate)
+			if(Vector3.Distance(transform.position, moveTo[0]) > 0.05f)
 				EventMove();
 			else
 				NextMove();
@@ -25,28 +25,31 @@ public class Mobile : MonoBehaviour {
 	public void EventDestruct()
 	{
 	    //GameObject.Instantiate(largeExplosion, transform.position, transform.rotation);
-	    Engine.Entities.Remove(transform);//Remove from initiative
+	    //Engine.Entities.Remove(transform);//Remove from initiative
 		Destroy(transform);
+	}
+
+	public void NextFace()
+	{
+		moveDir = moveTo[0] - transform.position;
+		moveDir.y =0;
+        Vector3 dir = Vector3.Cross(faceDir, moveDir);
+        if(dir.y > 0.0f)
+			turnTo = Vector3.Angle(faceDir, moveDir);
+		else
+			turnTo = -Vector3.Angle(faceDir, moveDir);
 	}
 
 	public void NextMove()
 	{
 		moveTo.RemoveAt(0);
 		if(moveTo.Count > 0)
-		{
-			moveDir = moveTo[0] - transform.position;
-			moveDir.y =0;
-	        Vector3 dir = Vector3.Cross(facing, moveDir);
-	        if(dir.y > 0.0f)
-				turnTo = Vector3.Angle(facing, moveDir);
-			else
-				turnTo = -Vector3.Angle(facing, moveDir);
-		}
+			NextFace();
 		else
 			isReady = true;
 	}
 
-	public void OrderFire(GameObject target, Ammunition bullet)
+	public void OrderFire(GameObject target, Ammunition bullet)//TEMP: later call it EventFire
 	{
 		Transform clone = (Transform)GameObject.Instantiate(Resources.Load(bullet.PrefabID), transform.position, transform.rotation); 
 		Debug.Log(target.transform.position);
@@ -77,10 +80,7 @@ public class Mobile : MonoBehaviour {
         transform.Rotate(0.0f, step, 0.0f);
         turnTo -= step;
         if(turnTo == 0.0f)
-        {
-        	facing = moveDir;
-        	isReady = true;
-        }
+        	faceDir = moveDir;
 	}
 
     void OnMouseDown() {//TEMP

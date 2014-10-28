@@ -20,11 +20,12 @@ public class Part
 		limb.Children.Add(Parent);
 	}
 
-	public float Install(Component part)
+	public float Install(Component comp)
 	{
-		Proportion["mass"] += part.GetMass();//Increment used mass
-		Components.Add(part);//Add to inventory
-		part.EventInstall(this);//Attach to part
+		Proportion["mass"] += comp.GetMass();//Increment used mass
+		Components.Add(comp);//Add to inventory
+		Debug.Log("Going to add to part "+Short+" the comp "+comp.Short);
+		comp.EventInstall(this);//Attach to part
 		return Proportion["max mass"] - Proportion["mass"];
 	}
 

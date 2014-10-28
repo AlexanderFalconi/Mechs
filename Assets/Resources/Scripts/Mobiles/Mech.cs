@@ -13,19 +13,28 @@ public class Mech : Mobile {
 	private Chassis InternalStructure;
 	public Pilot PilotOb;
 	public Weapon SelectedWeapon;
-	public Vector3 Position;
-	public int Face;
+	public Vector3 Position, Facing;
+	public Engine Environment;
 
-	public void SetPosition(Vector3 pos, int face)
+	public Mech()
 	{
-		Position = pos;
-		Face = face;
-		transform.position = pos;
+		UpdateActuators();
+		Debug.Log(Speed["run"]);
 	}
 
 	public void SetPilot(Pilot pilot)
 	{
 		PilotOb = pilot;
+	}
+
+
+	public void SetPosition(Vector3 pos, Vector3 face)
+	{
+		Position = pos;
+		transform.position = pos;
+		Facing = face;
+		faceDir = face;
+		moveDir = face;
 	}
 
 	public void SetMass(float mass, Chassis chassis)
@@ -71,6 +80,7 @@ public class Mech : Mobile {
 
 	public float AddComponent(string limb, Component part)
 	{
+		Debug.Log("Trying to add "+part.Short);
 		return Body[limb].Install(part);
 	}
 
@@ -114,11 +124,33 @@ public class Mech : Mobile {
 	public void OrderMove(Vector3 pos)
 	{
 		List<Vector3> tmp;
-		if(isReady == false)
-			return;//Can't move
-		isReady = false;
-		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
-	}	
+		if(isReady == false || Position == pos)
+			return;//Too busy to move
+		EventMove(GetMovementPath(GetDirectSteps(Position, pos)));
+	}
+
+	public void EventMove(List<Vector3> path)
+	{
+		List<Vector3> tmp = new List<Vector3>();
+		foreach(Vector3 move in path)
+		{
+			if(Speed["moved"] >= Speed["run"])
+				break;
+			else
+				tmp.Add(move);
+			Speed["moved"]++;
+			Debug.Log(Speed["moved"]);
+			Environment.EventMove(this.transform, move);
+			Position = move;
+			Facing = Position - move;
+		}
+		if(tmp.Count > 0)
+		{
+			isReady = false;
+			moveTo = tmp;
+			NextFace();			
+		}//else can't move
+	}
 
 	public void OrderJump(Vector3 pos)
 	{
@@ -177,9 +209,9 @@ public class Mech : Mobile {
 						result -= ch[3];
 						if(result <= 0)
 						{//Found the tile to hit, see if an entity is there
-							if(Engine.Grid[(int)ch[0],(int)ch[1],(int)ch[2]] != null)//An entity is here
+							if(Environment.Grid[(int)ch[0],(int)ch[1],(int)ch[2]] != null)//An entity is here
 							{
-								Transform potential = Engine.Grid[(int)ch[0], (int)ch[1], (int)ch[2]][0];//Takes the first element of the list for now
+								Transform potential = Environment.Grid[(int)ch[0], (int)ch[1], (int)ch[2]][0];//Takes the first element of the list for now
 								if(potential == target)
 									EventRangedAttack(target, ammo);//Try to hit intended target
 								else
@@ -227,7 +259,7 @@ public class Mech : Mobile {
 	public void EventLand()
 	{
 		Posture = 1;//Land
-		if(Engine.Grid[(int)Position.x,(int)Position.y,(int)Position.z].Count > 0)
+		if(Environment.Grid[(int)Position.x,(int)Position.y,(int)Position.z].Count > 0)
 		{//There's another mech in this space
 			if(!EventManeuver(2))//Try to avoid falling
 				EventFall(1);//Failed, fall
@@ -309,17 +341,26 @@ public class Mech : Mobile {
 		Balance = Stabilization = Rotation = Mobility = 0.0f;
 		foreach(KeyValuePair<string,Part> item in Body)
 		{
+			Debug.Log("Checking "+item.Value.Short + " "+item.Value.Components.Count);
 			foreach(Component component in item.Value.Components)
 			{
 				Balance += component.GetBalance();
 				Stabilization += component.GetStabilization();
 				Rotation += component.GetRotation();
 				Mobility += component.GetMobility();
+				Debug.Log("ENTERED:  "+component.Short);
 				Locomotion += component.GetLocomotion();
 			}
 		}
+		Debug.Log(Balance);
+		Debug.Log(Stabilization);
+		Debug.Log(Rotation);
+		Debug.Log(Mobility);
+		Debug.Log(Locomotion);
 		Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
 		Speed["run"] = Speed["walk"] *3 / 2;
+		Speed["walk"] = 5;
+		Speed["run"] = 18;
 	}
 
 	public float GetMovementPower()
@@ -339,7 +380,7 @@ public class Mech : Mobile {
 
 	private void EventFall(int height)
 	{
-		Face = Random.Range(0,7); 
+		//Facing = Random.Range(0,7); 
 		EventDamage(this, new Bludgeoning(Mathf.FloorToInt(GetMass()/10*height)));
 		if(!EventManeuver(height))
 			PilotOb.EventDamage(1);
@@ -461,22 +502,24 @@ public class Mech : Mobile {
 		float dZ = to.z - from.z;
 		float slope;
 		List<Vector3> path = new List<Vector3>();
+		Debug.Log("Dx"+dX);
+		Debug.Log("Dz"+dZ);
 		if(Mathf.Abs(dZ) > Mathf.Abs(dX))
 		{
-			slope = dX/dZ;
-			for(var i = 0; i < dZ; i++)
+			slope = dX/Mathf.Abs(dZ);
+			for(var i = 0; i < Mathf.Abs(dZ); i++)
 			{
-				from.z++;
+				from.z += dZ/Mathf.Abs(dZ);
 				from.x+=slope;
 				path.Add(from);
 			}
 		}
 		else
 		{
-			slope = dZ/dX;
-			for(var i = 0; i < dX; i++)
+			slope = dZ/Mathf.Abs(dX);
+			for(var i = 0; i < Mathf.Abs(dX); i++)
 			{
-				from.x++;
+				from.x+= dX/Mathf.Abs(dX);
 				from.z+=slope;
 				path.Add(from);
 			}
@@ -486,6 +529,8 @@ public class Mech : Mobile {
 
 	public List<Vector3> GetMovementPath(List<Vector3> steps)
 	{//Simplified pathing algorithm
+		foreach(Vector3 st in steps)
+			Debug.Log(st);
 		List<Vector3> path = new List<Vector3>();
 		foreach(Vector3 step in steps)
 			path.Add(new Vector3(Mathf.Round(step.x), Mathf.Round(step.y), Mathf.Round(step.z)));

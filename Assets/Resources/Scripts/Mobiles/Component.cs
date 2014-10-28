@@ -7,11 +7,12 @@ public class Component
     public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public Dictionary<string,float> Energy = new Dictionary<string,float>();
     public Part Installed;
-    public string Short;
+    public string Short, Long;
 
     public void EventInstall(Part part)
     {
         Installed = part;//What is it attached to
+        Debug.Log("entering bottom");
     }
 
     public void EventUninstall()

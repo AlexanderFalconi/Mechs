@@ -26,8 +26,8 @@ public class Hellfyre : Mech
 		AddComponent("right arm", new M1ArmActuator(0.5f));//Add actuators
 		AddComponent("left arm", new M1HandActuator(0.25f));//Add actuators
 		AddComponent("right arm", new M1HandActuator(0.25f));//Add actuators
-		AddComponent("left arm", new M1HandActuator(0.25f));//Add actuators
-		AddComponent("right arm", new M1HandActuator(0.25f));//Add actuators
+		AddComponent("left arm", new M1ShoulderActuator(0.25f));//Add actuators
+		AddComponent("right arm", new M1ShoulderActuator(0.25f));//Add actuators
 		AddComponent("head", new StandardCockpit());//Add cockpit
 		AddComponent("head", new LifeSupport());//Add life support
 		AddComponent("center torso", new M2Central());//Add gyros

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Bushwacker : Mech 
 {
-	public Bushwacker() : base()
+	public Bushwacker()
 	{
 		//Connect limb
 		Body["left torso"].Attach(Body["center torso"], this);
@@ -26,8 +26,8 @@ public class Bushwacker : Mech
 		AddComponent("right arm", new M1ArmActuator(0.5f));//Add actuators
 		AddComponent("left arm", new M1HandActuator(0.25f));//Add actuators
 		AddComponent("right arm", new M1HandActuator(0.25f));//Add actuators
-		AddComponent("left arm", new M1HandActuator(0.25f));//Add actuators
-		AddComponent("right arm", new M1HandActuator(0.25f));//Add actuators
+		AddComponent("left arm", new M1ShoulderActuator(0.25f));//Add actuators
+		AddComponent("right arm", new M1ShoulderActuator(0.25f));//Add actuators
 		AddComponent("head", new StandardCockpit());//Add cockpit
 		AddComponent("head", new LifeSupport());//Add life support
 		AddComponent("center torso", new M2Central());//Add gyros
@@ -47,5 +47,6 @@ public class Bushwacker : Mech
 		AddArmor("left leg", "external", 1.0f);//Add armor
 		AddArmor("right leg", "external", 1.0f);//Add armor
 		AddArmor("head", "external", 1.0f);//Add armor
+		UpdateActuators();
 	}
 }

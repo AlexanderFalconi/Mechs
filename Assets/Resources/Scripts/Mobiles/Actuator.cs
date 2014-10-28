@@ -8,6 +8,12 @@ public class Actuator : Component
 		SetMass(mass);
 	}
 
+	public void EventInstall(Part part)
+	{
+		Debug.Log("middle");
+		base.EventInstall(part);
+	}
+
 	public float GetRotation()
 	{
 		return 0.0f;
