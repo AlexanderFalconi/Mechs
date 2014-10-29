@@ -12,23 +12,23 @@ public class CenterTorso : Part
 		Melee.Add("pounce");
 	}
 	
-	public float[] GetFiringArc()
+	public override float[] GetFiringArc()
 	{
 		float[] arc = new float[] {322.5f, 37.5f};
 		return arc;
 	}
 
-	public int GetMeleeCR()
+	public override int GetMeleeCR()
 	{
 		return 2;//Used for charge, pounce
 	}
 
-	public int GetMeleeDamage()
+	public override int GetMeleeDamage()
 	{
 		return Mathf.FloorToInt(Master.GetMass() / 10.0f) * Master.Speed["momentum"];
 	}
 
-	public void EventMeleeBacklash()
+	public override void EventMeleeBacklash()
 	{
 		EventDamage(new Bludgeoning(Mathf.FloorToInt(Master.GetMass() / 10.0f) * Master.Speed["momentum"]));
 	}

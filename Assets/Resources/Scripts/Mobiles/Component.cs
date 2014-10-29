@@ -9,13 +9,12 @@ public class Component
     public Part Installed;
     public string Short, Long;
 
-    public void EventInstall(Part part)
+    public virtual void EventInstall(Part part)
     {
         Installed = part;//What is it attached to
-        Debug.Log("entering bottom");
     }
 
-    public void EventUninstall()
+    public virtual void EventUninstall()
     {
         Installed = null;//What is it attached to
     }
@@ -30,55 +29,55 @@ public class Component
         return Mass;
     }
 
-    public void EventDamage(int dmg)
+    public virtual void EventDamage(int dmg)
     {
         Status += dmg;
     	if(Status > 3)
     		Status = 3;//0: ok, 1: stun, 2: damaged, 3: destroyed
     }
 
-    public float GetBalance()
+    public virtual float GetBalance()
     {
         return 0.0f;
     }
     
-    public float GetRotation()
+    public virtual float GetRotation()
     {
         return 0.0f;
     }
 
-    public float GetMobility()
+    public virtual float GetMobility()
     {
         return 0.0f;
     }
 
-    public float GetStabilization()
+    public virtual float GetStabilization()
     {
         return 0.0f;
     }
 
-    public float GetLocomotion()
+    public virtual float GetLocomotion()
     {
         return 0.0f;
     }
 
-    public float GetAccuracy()
+    public virtual float GetAccuracy()
     {
         return 0.0f;
     }
 
-    public int EventReloading(int max)
-    {
-        return 0;
-    }
-
-    public float EventGeneratePower()
+    public virtual float EventGeneratePower()
     {
         return 0.0f;
     }
 
-    public bool IsMeleeWeapon()
+    public virtual bool IsMeleeWeapon()
     {
         return false;
+    }
+
+    public virtual int EventReloading(int max)
+    {
+        return 0;
     }
 }

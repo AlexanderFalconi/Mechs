@@ -9,7 +9,7 @@ public class RightTorso : Part
 		HitTable = new Dictionary<string,int>() {{"front", 5}, {"left", 4}, {"right", 7}};
 		Proportion["ratio"] = 0.15f;
 	}
-	public float[] GetFiringArc()
+	public override float[] GetFiringArc()
 	{
 		float[] arc = new float[] {0.0f, 62.5f};
 		return arc;

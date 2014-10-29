@@ -11,19 +11,18 @@ public class M1ShoulderActuator : Actuator
 		Long = "A MechTech Mark-1 shoulder actuator. It binds the upper arm with the torso and expands the range of motion of the arm.";
 	}
 
-	public float GetAccuracy()
+	public override float GetAccuracy()
 	{
 		return GetMass() * 0.15f;
 	}
 
-	public float GetRotation()
+	public override float GetRotation()
 	{
 		return GetMass() * 0.35f;
 	}
 
-	public void EventInstall(Part part)
+	public override void EventInstall(Part part)
 	{
-		Debug.Log("Trying from top "+this.Short);
 		part.Master.UpdateActuators();
 		base.EventInstall(part);
 	}

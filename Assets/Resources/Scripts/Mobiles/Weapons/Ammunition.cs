@@ -10,9 +10,10 @@ public class Ammunition : Component
 	public string DamageType;
     public int Range;
 
-    public void EventDamage()
+    public override void EventDamage(int dmg)
     {//Override
     	float result = Random.Range(0.1f, 100.0f);
+        base.EventDamage(dmg);
     	if(result < Combustibility * Amount)
     		Installed.EventDamage(new AmmoExplosion(Damage * Amount));//Ammo explodes!
     }
@@ -26,7 +27,7 @@ public class Ammunition : Component
         return true;
     }
 
-    public int EventReloading(int max)
+    public override int EventReloading(int max)
     {
         if(Amount < max)//Not enough
             max = Amount;//Take all

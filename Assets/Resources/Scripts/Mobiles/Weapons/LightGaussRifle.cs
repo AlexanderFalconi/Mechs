@@ -15,8 +15,9 @@ public class LightGaussRifle : Weapon
 		SetMass(3.5f);
 	}
 
-    public void EventDamage()
+    public override void EventDamage(int dmg)
     {//Override
-    	Installed.EventDamage(new AmmoExplosion(10));//Component explodes!
+     	base.EventDamage(dmg);
+   		Installed.EventDamage(new AmmoExplosion(10));//Component explodes!
     }
 }

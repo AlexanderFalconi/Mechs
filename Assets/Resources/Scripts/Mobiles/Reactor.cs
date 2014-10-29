@@ -24,13 +24,13 @@ public class Reactor : Component
 		Energy = energy;
 	}
 
-	public float EventGeneratePower()
+	public override float EventGeneratePower()
 	{
 		float efficiency = 100.0f - (float)Status;
 		return Energy * efficiency;
 	}
 
-    public void EventDamage(int dmg)
+    public override void EventDamage(int dmg)
     {//Override
     	Status += dmg*dmg;
     	if(Status > 100)

@@ -20,11 +20,10 @@ public class Part
 		limb.Children.Add(Parent);
 	}
 
-	public float Install(Component comp)
+	public virtual float Install(Component comp)
 	{
 		Proportion["mass"] += comp.GetMass();//Increment used mass
 		Components.Add(comp);//Add to inventory
-		Debug.Log("Going to add to part "+Short+" the comp "+comp.Short);
 		comp.EventInstall(this);//Attach to part
 		return Proportion["max mass"] - Proportion["mass"];
 	}
@@ -43,7 +42,7 @@ public class Part
 		}
 	}
 
-	public float GetStabilization()
+	public virtual float GetStabilization()
 	{
 		float stabilization = 0.0f;
 		foreach(Component item in Components)
@@ -51,12 +50,12 @@ public class Part
 		return Mathf.Floor(stabilization/Master.GetMass());
 	}
 	
-	public int GetMeleeCR()
+	public virtual int GetMeleeCR()
 	{
 		return 0;
 	}
 
-	public int EventReload(string compatible, int max)
+	public virtual int EventReload(string compatible, int max)
 	{
 		int found = 0;
 		int total = 0;
@@ -74,7 +73,7 @@ public class Part
 		return total;
 	}
 
-	public int EventDamage(Ammunition ammo, string side = "external")
+	public virtual int EventDamage(Ammunition ammo, string side = "external")
 	{
 		int inflicted = 0;
 		int crit = 0;
@@ -148,7 +147,7 @@ public class Part
 			specific.Key.EventDamage(specific.Value);
 	}	
 
-	public float EventGeneratePower()
+	public virtual float EventGeneratePower()
 	{
 		float power = 0.0f;
 		foreach(Component gen in Components)
@@ -156,22 +155,36 @@ public class Part
 		return power;
 	}
 
-	public int GetMeleeDamage()
+	public virtual int GetMeleeDamage()
 	{
 		return 0;
 	}
 
-	public void EventBacklash()
+	public virtual void EventMeleeBacklash()
 	{
 		
 	}
 
-	public int GetAccuracy()
+	public virtual float GetBalance()
 	{
-		return 0;
+		return 0.0f;
 	}
 
-	public float[] GetFiringArc()
+	public virtual float GetLocomotion()
+	{
+		return 0.0f;
+	}
+
+	public virtual float GetMobility()
+	{
+		return 0.0f;
+	}
+	public virtual float GetAccuracy()
+	{
+		return 0.0f;
+	}
+
+	public virtual float[] GetFiringArc()
 	{
 		float[] arc = new float[] {0.0f, 0.0f};
 		return arc;

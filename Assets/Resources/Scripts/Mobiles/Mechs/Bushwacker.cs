@@ -5,8 +5,7 @@ public class Bushwacker : Mech
 {
 	public Bushwacker()
 	{
-		//Connect limb
-		Body["left torso"].Attach(Body["center torso"], this);
+		Body["left torso"].Attach(Body["center torso"], this);//Connect limb
 		Body["right torso"].Attach(Body["center torso"], this);
 		Body["head"].Attach(Body["center torso"], this);
 		Body["left arm"].Attach(Body["left torso"], this);
@@ -47,6 +46,5 @@ public class Bushwacker : Mech
 		AddArmor("left leg", "external", 1.0f);//Add armor
 		AddArmor("right leg", "external", 1.0f);//Add armor
 		AddArmor("head", "external", 1.0f);//Add armor
-		UpdateActuators();
 	}
 }

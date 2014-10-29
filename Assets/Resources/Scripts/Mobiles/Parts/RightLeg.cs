@@ -11,13 +11,13 @@ public class RightLeg : Part
 		Melee.Add("kick");
 	}
 
-	public float[] GetFiringArc()
+	public override float[] GetFiringArc()
 	{
 		float[] arc = new float[] {0.0f, 62.5f};
 		return arc;
 	}
 
-	public float GetBalance()
+	public override float GetBalance()
 	{
 		float balance = 0.0f;
 		foreach(Component item in Components)
@@ -25,7 +25,7 @@ public class RightLeg : Part
 		return Mathf.Floor(balance/Master.GetMass());
 	}
 
-	public float GetMobility()
+	public override float GetMobility()
 	{
 		float mobility = 0.0f;
 		foreach(Component item in Components)
@@ -33,7 +33,7 @@ public class RightLeg : Part
 		return Mathf.Floor(mobility/Master.GetMass());
 	}
 
-	public float GetLocomotion()
+	public override float GetLocomotion()
 	{
 		float locomotion = 0.0f;
 		foreach(Component item in Components)
@@ -41,17 +41,17 @@ public class RightLeg : Part
 		return Mathf.Floor(locomotion/Master.GetMass());
 	}
 
-	public int GetMeleeCR()
+	public override int GetMeleeCR()
 	{
 		return 0;
 	}
 
-	public int GetMeleeDamage()
+	public override int GetMeleeDamage()
 	{
 		return (int)Proportion["mass"];
 	}
 
-	public void EventMeleeBacklash()
+	public override void EventMeleeBacklash()
 	{
 		Master.EventManeuver(0);//Balance after a kick
 		foreach(Component item in Components)

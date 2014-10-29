@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class Mech : Mobile {
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
@@ -18,8 +19,7 @@ public class Mech : Mobile {
 
 	public Mech()
 	{
-		UpdateActuators();
-		Debug.Log(Speed["run"]);
+
 	}
 
 	public void SetPilot(Pilot pilot)
@@ -80,7 +80,6 @@ public class Mech : Mobile {
 
 	public float AddComponent(string limb, Component part)
 	{
-		Debug.Log("Trying to add "+part.Short);
 		return Body[limb].Install(part);
 	}
 
@@ -139,7 +138,6 @@ public class Mech : Mobile {
 			else
 				tmp.Add(move);
 			Speed["moved"]++;
-			Debug.Log(Speed["moved"]);
 			Environment.EventMove(this.transform, move);
 			Position = move;
 			Facing = Position - move;
@@ -274,7 +272,7 @@ public class Mech : Mobile {
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
 	 		EventDamage(target.GetComponent<Mech>(), simulate);//If actually hit
-	 		limb.EventBacklash();//Sometimes can hurt self
+	 		limb.EventMeleeBacklash();//Sometimes can hurt self
  		}
     }
 
@@ -286,7 +284,7 @@ public class Mech : Mobile {
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
 			target.GetComponent<Mech>().EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
-		 	Body["center torso"].EventBacklash();//Sometimes can hurt self
+		 	Body["center torso"].EventMeleeBacklash();//Sometimes can hurt self
 		}
     }
 
@@ -341,22 +339,15 @@ public class Mech : Mobile {
 		Balance = Stabilization = Rotation = Mobility = 0.0f;
 		foreach(KeyValuePair<string,Part> item in Body)
 		{
-			Debug.Log("Checking "+item.Value.Short + " "+item.Value.Components.Count);
 			foreach(Component component in item.Value.Components)
 			{
 				Balance += component.GetBalance();
 				Stabilization += component.GetStabilization();
 				Rotation += component.GetRotation();
 				Mobility += component.GetMobility();
-				Debug.Log("ENTERED:  "+component.Short);
 				Locomotion += component.GetLocomotion();
 			}
 		}
-		Debug.Log(Balance);
-		Debug.Log(Stabilization);
-		Debug.Log(Rotation);
-		Debug.Log(Mobility);
-		Debug.Log(Locomotion);
 		Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
 		Speed["run"] = Speed["walk"] *3 / 2;
 		Speed["walk"] = 5;
@@ -475,7 +466,12 @@ public class Mech : Mobile {
 
 	public int GetAccuracyPenalty(Ammunition ammo)
 	{
-		return ammo.Installed.GetAccuracy();
+		if(ammo.Installed.GetAccuracy() >= GetMass() * 2.0f)
+			return 0;
+		else if(ammo.Installed.GetAccuracy() >= GetMass())
+			return 1;
+		else
+			return 2;
 	}
 
 	public int GetRangePenalty(Transform target, Ammunition ammo)
@@ -502,8 +498,6 @@ public class Mech : Mobile {
 		float dZ = to.z - from.z;
 		float slope;
 		List<Vector3> path = new List<Vector3>();
-		Debug.Log("Dx"+dX);
-		Debug.Log("Dz"+dZ);
 		if(Mathf.Abs(dZ) > Mathf.Abs(dX))
 		{
 			slope = dX/Mathf.Abs(dZ);
@@ -529,8 +523,6 @@ public class Mech : Mobile {
 
 	public List<Vector3> GetMovementPath(List<Vector3> steps)
 	{//Simplified pathing algorithm
-		foreach(Vector3 st in steps)
-			Debug.Log(st);
 		List<Vector3> path = new List<Vector3>();
 		foreach(Vector3 step in steps)
 			path.Add(new Vector3(Mathf.Round(step.x), Mathf.Round(step.y), Mathf.Round(step.z)));

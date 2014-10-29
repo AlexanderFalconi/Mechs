@@ -12,7 +12,7 @@ public class LeftArm : Part
 		Melee.Add("kick");
 	}
 
-	public float[] GetFiringArc()
+	public override float[] GetFiringArc()
 	{
 		float[] arc = new float[2];
 		float rotation = 0.0f;
@@ -27,7 +27,7 @@ public class LeftArm : Part
 		return arc;
 	}
 
-	public float GetAccuracy()
+	public override float GetAccuracy()
 	{
 		float accuracy = 0.0f;
 		foreach(Component item in Components)
@@ -35,17 +35,17 @@ public class LeftArm : Part
 		return Mathf.Floor(accuracy/Master.GetMass());
 	}
 
-	public int GetMeleeCR()
+	public override int GetMeleeCR()
 	{
 		return 1;//Punch push
 	}
 
-	public int GetMeleeDamage()
+	public override int GetMeleeDamage()
 	{
 		return (int)Proportion["mass"];
 	}
 
-	public void EventMeleeBacklash()
+	public override void EventMeleeBacklash()
 	{
 		foreach(Component item in Components)
 		{

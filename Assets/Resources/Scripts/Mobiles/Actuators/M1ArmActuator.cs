@@ -11,23 +11,23 @@ public class M1ArmActuator : Actuator
 		Long = "A MechTech Mark-1 arm actuator. It runs along the entire length of the arm and benefits any attached weaponry with a large firing arc.";
 	}
 
-	public float GetAccuracy()
+	public override float GetAccuracy()
 	{
 		return GetMass() * 0.35f;
 	}
 
-	public float GetRotation()
+	public override float GetRotation()
 	{
 		return GetMass() * 0.15f;
 	}
 
-	public void EventInstall(Part part)
+	public override void EventInstall(Part part)
 	{
 		base.EventInstall(part);
 		Installed.Master.UpdateActuators();
 	}
 
-	public void EventUninstall()
+	public override void EventUninstall()
 	{
 		Installed.Master.UpdateActuators();
 		base.EventUninstall();

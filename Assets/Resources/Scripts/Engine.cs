@@ -34,6 +34,7 @@ public class Engine : MonoBehaviour {
 	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = entity;//Select this mech
 	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, entity.transform.position, Quaternion.identity);
 	    boundingBoxOb.parent = entity;//attach bounding box to mech
+	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = entity;
 		entity = (Transform)GameObject.Instantiate(bushwacker);//Add mech
 		EventReceive(entity, new Vector3(20.0f, 0.0f, 15.0f), new Vector3(-1.0f, 0.0f, 0.0f));
 		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Mark", 3, 5));
@@ -66,18 +67,21 @@ public class Engine : MonoBehaviour {
 	
 	// Update is called once per frame
 	private void Update () {
-		if((gameObject.GetComponent<AI>() as AI) != null)
+		if(Entities.Count > 0)
 		{
-			if(Entities[turn].GetComponent<Mech>().isReady)
-				Entities[turn].GetComponent<AI>().SimpleAction();
-		}
-		if(Entities[turn].GetComponent<Mobile>().isDone)
-		{
-			Entities[turn].GetComponent<Mobile>().isDone = false;
-			turn++;
-			if(turn >= Entities.Count)
-				turn = 0;
-			boundingBoxOb.position = Entities[turn].position;
+			if((gameObject.GetComponent<AI>() as AI) != null)
+			{
+				if(Entities[turn].GetComponent<Mech>().isReady)
+					Entities[turn].GetComponent<AI>().SimpleAction();
+			}
+			if(Entities[turn].GetComponent<Mobile>().isDone)
+			{
+				Entities[turn].GetComponent<Mobile>().isDone = false;
+				turn++;
+				if(turn >= Entities.Count)
+					turn = 0;
+				boundingBoxOb.position = Entities[turn].position;
+			}
 		}
 	}
 

@@ -11,7 +11,7 @@ public class M1HandActuator : Actuator
 		Long = "A MechTech Mark-1 hand actuator. It attaches to the end of the arm and can be used for punching, picking up objects, and climbing.";
 	}
 
-	public bool IsMeleeWeapon()
+	public override bool IsMeleeWeapon()
 	{
 		return true;
 	}

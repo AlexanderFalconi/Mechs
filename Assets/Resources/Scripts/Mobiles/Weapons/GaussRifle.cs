@@ -15,8 +15,9 @@ public class GaussRifle : Weapon
 		SetMass(8.5f);
 	}
 
-    public void EventDamage()
+    public override void EventDamage(int dmg)
     {//Override
+    	base.EventDamage(dmg);
    		Installed.EventDamage(new AmmoExplosion(20));//Component explodes!
     }
 }

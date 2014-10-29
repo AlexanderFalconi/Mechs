@@ -9,7 +9,7 @@ public class Head : Part
 		HitTable = new Dictionary<string,int>() {{"front", 1}, {"left", 1}, {"right", 1}};
 		Proportion["ratio"] = 0.03f;
 	}
-	public float[] GetFiringArc()
+	public override float[] GetFiringArc()
 	{
 		float[] arc = new float[] {202.5f, 62.5f};
 		return arc;
