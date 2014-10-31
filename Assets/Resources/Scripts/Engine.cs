@@ -31,7 +31,6 @@ public class Engine : MonoBehaviour {
 		entity = (Transform)GameObject.Instantiate(hellfyre);//Add mech
 		EventReceive(entity, new Vector3(3.0f, 0.0f, 10.0f), new Vector3(1.0f, 0.0f, 0.0f));
 		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Alex", 3, 5));
-	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = entity;//Select this mech
 	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, entity.transform.position, Quaternion.identity);
 	    boundingBoxOb.parent = entity;//attach bounding box to mech
 	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = entity;
