@@ -29,11 +29,12 @@ public class Engine : MonoBehaviour {
 		    }
 	    }
 		entity = (Transform)GameObject.Instantiate(hellfyre);//Add mech
+	    GameObject.FindWithTag("Player").GetComponent<Player>().BindControl(entity);
+	    entity.GetComponent<Mech>().UpdateActuators();
 		EventReceive(entity, new Vector3(3.0f, 0.0f, 10.0f), new Vector3(1.0f, 0.0f, 0.0f));
 		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Alex", 3, 5));
-	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, entity.transform.position, Quaternion.identity);
+	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, entity.transform.position, Quaternion.identity);//Initialize bounding box object
 	    boundingBoxOb.parent = entity;//attach bounding box to mech
-	    GameObject.FindWithTag("Player").GetComponent<Player>().Selected = entity;
 		entity = (Transform)GameObject.Instantiate(bushwacker);//Add mech
 		EventReceive(entity, new Vector3(20.0f, 0.0f, 15.0f), new Vector3(-1.0f, 0.0f, 0.0f));
 		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Mark", 3, 5));

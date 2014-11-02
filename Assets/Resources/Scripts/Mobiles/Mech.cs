@@ -16,17 +16,36 @@ public class Mech : Mobile {
 	public Weapon SelectedWeapon;
 	public Vector3 Position, Facing;
 	public Engine Environment;
-
-	public Mech()
-	{
-
-	}
+	public delegate void UpdateUIOutput(string output); // declare delegate type
+	public Player Controller;
 
 	public void SetPilot(Pilot pilot)
 	{
 		PilotOb = pilot;
 	}
 
+	public Transform BindController(Player who)
+	{
+		Controller = who;
+		UpdateInterface();
+		return transform;
+	}
+
+	public void UpdateInterface()
+	{
+		if(Controller)
+		{
+			Controller.UpdateUIMass(Mass, Size);
+			Controller.UpdateUIEnergy(Energy);
+			Controller.UpdateUIBalance(Balance);
+			Controller.UpdateUIStabilization(Stabilization);
+			Controller.UpdateUIRotation(Rotation);
+			Controller.UpdateUIMobility(Mobility);
+			Controller.UpdateUILocomotion(Locomotion);
+			Controller.UpdateUISpeed(Speed["walk"], Speed["run"], Speed["jump"], Speed["momentum"], Speed["moved"]);
+		}
+		//else passthrough
+	}
 
 	public void SetPosition(Vector3 pos, Vector3 face)
 	{
@@ -71,6 +90,8 @@ public class Mech : Mobile {
 		Body["center torso"].Proportion["max mass"] += totalMassRem;//Add excess to center torso
 		Body["center torso"].Armors["internal"].AddArmor(totalIntRem);
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
+		Debug.Log(Mass);
+		UpdateInterface();
 	}
 
 	public float GetMass()
@@ -118,6 +139,7 @@ public class Mech : Mobile {
 		Energy = 0;//Later on create alternate component and store power in batteries
 		foreach(KeyValuePair<string,Part> gen in Body)
 			Energy += gen.Value.EventGeneratePower();
+		UpdateInterface();
 	}
 
 	public void OrderMove(Vector3 pos)
@@ -336,7 +358,7 @@ public class Mech : Mobile {
 
 	public void UpdateActuators()
 	{
-		Balance = Stabilization = Rotation = Mobility = 0.0f;
+		Balance = Stabilization = Rotation = Mobility = Location = 0.0f;
 		foreach(KeyValuePair<string,Part> item in Body)
 		{
 			foreach(Component component in item.Value.Components)
@@ -350,8 +372,7 @@ public class Mech : Mobile {
 		}
 		Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
 		Speed["run"] = Speed["walk"] *3 / 2;
-		Speed["walk"] = 5;
-		Speed["run"] = 18;
+		UpdateInterface();
 	}
 
 	public float GetMovementPower()

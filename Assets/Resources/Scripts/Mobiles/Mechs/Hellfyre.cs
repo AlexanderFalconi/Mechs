@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Hellfyre : Mech 
 {
-	public Hellfyre () : base()
+	public Hellfyre()
 	{
 		//Connect limb
 		Body["left torso"].Attach(Body["center torso"], this);
