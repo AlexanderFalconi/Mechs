@@ -1,11 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class AI : MonoBehaviour {
-	public GameObject Selected;
-	public bool androidFire = false;
-	public int HP = 3;
-
+public class AI : MonoBehaviour 
+{
 	void Start () 
 	{
 
@@ -14,6 +11,6 @@ public class AI : MonoBehaviour {
 	public void SimpleAction()
 	{
 		//Selected.GetComponent<Mech>().OrderFire(GameObject.FindWithTag("Player").transform.GetChild(0).gameObject);
-		Selected.GetComponent<Mech>().isDone = true;
+		GetComponent<Mech>().isDone = true;
 	}
 }

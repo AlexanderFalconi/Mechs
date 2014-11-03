@@ -13,12 +13,12 @@ public class M1ShoulderActuator : Actuator
 
 	public override float GetAccuracy()
 	{
-		return GetMass() * 0.15f;
+		return GetMass() * 15.0f;
 	}
 
 	public override float GetRotation()
 	{
-		return GetMass() * 0.35f;
+		return GetMass() * 35.0f;
 	}
 
 	public override void EventInstall(Part part)
@@ -27,7 +27,7 @@ public class M1ShoulderActuator : Actuator
 		base.EventInstall(part);
 	}
 
-	public void EventUninstall()
+	public override void EventUninstall()
 	{
 		Installed.Master.UpdateActuators();
 		base.EventUninstall();

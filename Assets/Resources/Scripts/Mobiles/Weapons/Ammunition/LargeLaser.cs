@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 public class LargeLaser : Ammunition 
 {
-	static public string Short = "Large Laser Beam";
-	static public string Long = "A large laser beam.";
 	static public List<string> Ammo = new List<string>() {"HL-1"};
-	static public float Combustibility = 0.0f;
 	public string[] Compatibility = new string[] {"head", "left arm", "right arm", "left leg", "right leg", "left torso", "right torso", "center torso"};
 	static public int Bundle = 1;
 	public LargeLaser()
 	{
+		Short = "Large Laser Beam";
+		Long = "A large laser beam.";
+		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
 		DamageType = "ballistic";

@@ -13,12 +13,12 @@ public class M1HipActuator : Actuator
 
 	public override float GetMobility()
 	{
-		return GetMass() * 0.35f;
+		return GetMass() * 35.0f;
 	}
 
 	public override float GetBalance()
 	{
-		return GetMass() * 0.15f;
+		return GetMass() * 15.0f;
 	}
 
 	public override void EventInstall(Part part)

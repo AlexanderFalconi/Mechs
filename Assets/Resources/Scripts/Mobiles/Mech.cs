@@ -11,17 +11,28 @@ public class Mech : Mobile {
 	private float Mass = 0.0f;
 	public float Energy = 0.0f;
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion;//Mech attributes
-	private Chassis InternalStructure;
-	public Pilot PilotOb;
+	public Pilot PilotOb = null;
 	public Weapon SelectedWeapon;
 	public Vector3 Position, Facing;
 	public Engine Environment;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
 	public Player Controller;
 
-	public void SetPilot(Pilot pilot)
+	public bool LoadPilot(Pilot pilot)
 	{
-		PilotOb = pilot;
+		foreach(KeyValuePair<string,Part> item in Body)
+		{
+			foreach(Component component in item.Value.Components)
+			{
+				if(component.AddPersonell(pilot))
+				{//Found a cockpit
+					PilotOb = pilot;
+					UpdateInterface();
+					return true;//Done
+				}
+			}
+		}
+		return false;//Couldn't find a cockpit
 	}
 
 	public Transform BindController(Player who)
@@ -43,6 +54,7 @@ public class Mech : Mobile {
 			Controller.UpdateUIMobility(Mobility);
 			Controller.UpdateUILocomotion(Locomotion);
 			Controller.UpdateUISpeed(Speed["walk"], Speed["run"], Speed["jump"], Speed["momentum"], Speed["moved"]);
+			Controller.UpdateUIPilot(PilotOb);
 		}
 		//else passthrough
 	}
@@ -63,7 +75,6 @@ public class Mech : Mobile {
 		float totalMassRem = 100.0f;//Total mech mass
 		float totalIntRem = totalMassRem * chassis.Internal;//Total internal structure portion
 		totalIntRem -= totalIntRem%0.25f;//Round down to 0.25.
-		InternalStructure = chassis;//Set internal
 		Mass = mass;//Set mass
 		if(mass < 10.0f)
 			Debug.LogError("Mech mass must be at least 10.0.");
@@ -90,7 +101,6 @@ public class Mech : Mobile {
 		Body["center torso"].Proportion["max mass"] += totalMassRem;//Add excess to center torso
 		Body["center torso"].Armors["internal"].AddArmor(totalIntRem);
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
-		Debug.Log(Mass);
 		UpdateInterface();
 	}
 
@@ -125,7 +135,7 @@ public class Mech : Mobile {
 			return "Super-Heavy";
 	}
 
-	private void Interval()
+	public void Interval()
 	{
 		Speed["momentum"] = 0;
 		Speed["moved"] = 0;
@@ -140,11 +150,11 @@ public class Mech : Mobile {
 		foreach(KeyValuePair<string,Part> gen in Body)
 			Energy += gen.Value.EventGeneratePower();
 		UpdateInterface();
+		isDone = false;
 	}
 
 	public void OrderMove(Vector3 pos)
 	{
-		List<Vector3> tmp;
 		if(isReady == false || Position == pos)
 			return;//Too busy to move
 		EventMove(GetMovementPath(GetDirectSteps(Position, pos)));
@@ -170,11 +180,11 @@ public class Mech : Mobile {
 			moveTo = tmp;
 			NextFace();			
 		}//else can't move
+		UpdateInterface();
 	}
 
 	public void OrderJump(Vector3 pos)
 	{
-		List<Vector3> tmp;
 		if(isReady == false)
 			return;//Can't move
 		if(Posture == 0)
@@ -288,7 +298,6 @@ public class Mech : Mobile {
 
     public void EventMeleeAttack(Transform target, Part limb)
     {
-        float result;
         int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
         Ammunition simulate = new Bludgeoning(limb.GetMeleeDamage());
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
@@ -300,9 +309,7 @@ public class Mech : Mobile {
 
     public void EventCollisionAttack(Transform target)
     {
-        float result;
         int accuracy = PilotOb.Piloting - target.GetComponent<Mech>().PilotOb.Piloting + Body["center torso"].GetMeleeCR();
-        Ammunition cluster;
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
 			target.GetComponent<Mech>().EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
@@ -358,7 +365,7 @@ public class Mech : Mobile {
 
 	public void UpdateActuators()
 	{
-		Balance = Stabilization = Rotation = Mobility = Location = 0.0f;
+		Balance = Stabilization = Rotation = Mobility = Locomotion = 0.0f;
 		foreach(KeyValuePair<string,Part> item in Body)
 		{
 			foreach(Component component in item.Value.Components)

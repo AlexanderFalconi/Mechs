@@ -29,9 +29,14 @@ public class Pilot {
 			Conscious = false;		
 	}
 
-	public void EventKilled()
+	private void EventKilled()
 	{
 		HP = 0;
 		Conscious = false;
+	}
+
+	public string UIReport()
+	{
+		return Name+" ("+HP+"HP; "+Gunnery+"G; "+Piloting+"P)";
 	}
 }

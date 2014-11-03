@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Reactor : Component 
 {
-	private float Energy;
+	public float Power;
 	private static Dictionary<string,float> ReactorTable = new Dictionary<string,float>() 
 	{
 		{"m6 fusion", 25.0f}, {"m11 fusion", 23.0f}, {"m157 fusion", 21.0f}, {"fission", 15.0f}, {"combustion", 3.0f}, {"solar", 1.0f}
@@ -21,13 +21,13 @@ public class Reactor : Component
 			increases[type] *= 0.95f;
 			energy += ReactorTable[type]*increases[type];
 		}
-		Energy = energy;
+		Power = energy;
 	}
 
 	public override float EventGeneratePower()
 	{
 		float efficiency = 100.0f - (float)Status;
-		return Energy * efficiency;
+		return Power * efficiency;
 	}
 
     public override void EventDamage(int dmg)

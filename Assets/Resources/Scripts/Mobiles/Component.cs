@@ -38,27 +38,27 @@ public class Component
 
     public virtual float GetBalance()
     {
-        return 0.0f;
+        return 0.0f;//Doesn't impact balance
     }
     
     public virtual float GetRotation()
     {
-        return 0.0f;
+        return 0.0f;//Doesn't impact rotation
     }
 
     public virtual float GetMobility()
     {
-        return 0.0f;
+        return 0.0f;//Doesn't impact mobility
     }
 
     public virtual float GetStabilization()
     {
-        return 0.0f;
+        return 0.0f;//Doesn't impact stabilization
     }
 
     public virtual float GetLocomotion()
     {
-        return 0.0f;
+        return 0.0f;//Does not impact locomotion
     }
 
     public virtual float GetAccuracy()
@@ -68,16 +68,21 @@ public class Component
 
     public virtual float EventGeneratePower()
     {
-        return 0.0f;
+        return 0.0f;//Can't generate power
     }
 
     public virtual bool IsMeleeWeapon()
     {
-        return false;
+        return false;//Isn't a melee weapon
     }
 
     public virtual int EventReloading(int max)
     {
-        return 0;
+        return 0;//Doesn't reload
+    }
+
+    public virtual bool AddPersonell(Pilot pilot)
+    {
+        return false;//Doesn't hold personell
     }
 }

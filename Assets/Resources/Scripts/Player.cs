@@ -42,15 +42,21 @@ public class Player : MonoBehaviour
 				Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 				RaycastHit hit;
 				//if( Physics.Raycast( ray, out hit, 100 ) )
-				//	Selected.GetComponent<Mech>().OrderFire(hit.transform);			
+				//	Controlling.GetComponent<Mech>().OrderFire(hit.transform);			
 			}
 		}
+	}
+
+	public void EndTurn()
+	{
+		Controlling.GetComponent<Mech>().isDone = true;
 	}
 
 	public void BindControl(Transform entity)
 	{
 		Controlling = entity.GetComponent<Mech>().BindController(this);
 	}
+
 	//UI Interface Functions
 	public void UpdateUIEnergy(float energy)
 	{
@@ -59,7 +65,7 @@ public class Player : MonoBehaviour
 
 	public void UpdateUISpeed(float walk, float run, float jump, int momentum, int moved)
 	{
-		SpeedOutput.text = walk.ToString()+"/"+run.ToString()+"/"+jump.ToString();
+		SpeedOutput.text = walk.ToString()+"/"+run.ToString()+"/"+jump.ToString()+":"+moved+"."+momentum;
 	}
 
 	public void UpdateUIMass(float mass, int size)
@@ -102,8 +108,26 @@ public class Player : MonoBehaviour
 		MomentumOutput.text = momentum.ToString();
 	}
 
-	public void UpdateUIPilot(string output)
+	public void UpdateUIPilot(Pilot pilot)
 	{
-		PilotOutput.text = output;
+		if(pilot == null)
+			PilotOutput.text = "None";
+		else
+			PilotOutput.text = pilot.UIReport();
+	}
+
+	public void UpdateUIArmor(Pilot pilot)
+	{
+
+	}
+
+	public void UpdateUIWeapons()
+	{
+
+	}
+
+	public void SelectWeapon(int weapon)
+	{
+		
 	}
 }

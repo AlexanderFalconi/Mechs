@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class Engine : MonoBehaviour {
 	private static float[] Random = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
 	public List<Transform> Entities = new List<Transform>();
-	private int turn;
+	private int turn = 0;
 	public Transform boundingBox, grass, hellfyre, bushwacker;
 	private Transform boundingBoxOb;
 	public List<Transform>[,,] Grid = new List<Transform>[30, 5, 30]; 
@@ -32,22 +32,22 @@ public class Engine : MonoBehaviour {
 	    GameObject.FindWithTag("Player").GetComponent<Player>().BindControl(entity);
 	    entity.GetComponent<Mech>().UpdateActuators();
 		EventReceive(entity, new Vector3(3.0f, 0.0f, 10.0f), new Vector3(1.0f, 0.0f, 0.0f));
-		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Alex", 3, 5));
+		entity.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Alex", 3, 5));
 	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, entity.transform.position, Quaternion.identity);//Initialize bounding box object
 	    boundingBoxOb.parent = entity;//attach bounding box to mech
 		entity = (Transform)GameObject.Instantiate(bushwacker);//Add mech
 		EventReceive(entity, new Vector3(20.0f, 0.0f, 15.0f), new Vector3(-1.0f, 0.0f, 0.0f));
-		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Mark", 3, 5));
+		entity.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Mark", 3, 5));
 		entity.gameObject.AddComponent<AI>();
 		entity = (Transform)GameObject.Instantiate(bushwacker);//Add mech
 		EventReceive(entity, new Vector3(18.0f, 0.0f, 13.0f), new Vector3(-1.0f, 0.0f, 0.0f));
-		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Frank", 4, 4));
+		entity.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Frank", 4, 4));
 		entity.gameObject.AddComponent<AI>();
 		entity = (Transform)GameObject.Instantiate(bushwacker);//Add mech
 		EventReceive(entity, new Vector3(16.0f, 0.0f, 14.0f), new Vector3(-1.0f, 0.0f, 0.0f));
-		entity.gameObject.GetComponent<Mech>().SetPilot(new Pilot("Eric", 5, 3));
+		entity.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Eric", 5, 3));
 		entity.gameObject.AddComponent<AI>();
-		turn = 0;//turn starts with first in list
+		StartTurn();//starts game
 	}
 	
 	public void EventReceive(Transform entity, Vector3 position, Vector3 facing)
@@ -65,24 +65,31 @@ public class Engine : MonoBehaviour {
 	    entity.gameObject.GetComponent<Mech>().Environment = null;		
 	}
 	
-	// Update is called once per frame
 	private void Update () {
 		if(Entities.Count > 0)
 		{
-			if((gameObject.GetComponent<AI>() as AI) != null)
+			if((Entities[turn].GetComponent<AI>() as AI) != null)
 			{
 				if(Entities[turn].GetComponent<Mech>().isReady)
 					Entities[turn].GetComponent<AI>().SimpleAction();
 			}
 			if(Entities[turn].GetComponent<Mobile>().isDone)
-			{
-				Entities[turn].GetComponent<Mobile>().isDone = false;
-				turn++;
-				if(turn >= Entities.Count)
-					turn = 0;
-				boundingBoxOb.position = Entities[turn].position;
-			}
+				NextTurn();
 		}
+	}
+
+	private void StartTurn()
+	{
+		boundingBoxOb.position = Entities[turn].position;
+		Entities[turn].GetComponent<Mech>().Interval();
+	}
+
+	private void NextTurn()
+	{
+		turn++;
+		if(turn >= Entities.Count)
+			turn = 0;
+		StartTurn();
 	}
 
 	public void EventMove(Transform entity, Vector3 to)

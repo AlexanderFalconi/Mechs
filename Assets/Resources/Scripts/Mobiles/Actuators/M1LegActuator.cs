@@ -13,7 +13,7 @@ public class M1LegActuator : Actuator
 
 	public override float GetLocomotion()
 	{
-		return GetMass() * 0.50f;
+		return GetMass() * 50.0f;
 	}
 
 	public override void EventInstall(Part part)
@@ -22,7 +22,7 @@ public class M1LegActuator : Actuator
 		Installed.Master.UpdateActuators();
 	}
 
-	public void EventUninstall()
+	public override void EventUninstall()
 	{
 		Installed.Master.UpdateActuators();
 		base.EventUninstall();
