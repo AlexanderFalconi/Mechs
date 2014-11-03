@@ -15,7 +15,24 @@ public class Player : MonoBehaviour
 	public Text BalanceOutput;
 	public Text MomentumOutput;
 	public Text PilotOutput;
+	public Text ArmorHOutput;
+	public Text ArmorLAOutput;
+	public Text ArmorRAOutput;
+	public Text ArmorLLOutput;
+	public Text ArmorRLOutput;
+	public Text ArmorLTOutput;
+	public Text ArmorRTOutput;
+	public Text ArmorCTOutput;
+	public Text ArmorLeftArmOutput;
+	public Text ArmorRightArmOutput;
+	public Text ArmorLeftLegOutput;
+	public Text ArmorRightLegOutput;
+	public Text ArmorLeftTorsoOutput;
+	public Text ArmorRightTorsoOutput;
+	public Text ArmorCenterTorsoOutput;
 	public Transform Controlling;
+	public List<Weapon> Weapons = new List<Weapon>();
+	private Weapon SelectedWeapon;
 	public bool androidFire = false;
 
 	private void Update () 
@@ -118,16 +135,43 @@ public class Player : MonoBehaviour
 
 	public void UpdateUIArmor(Pilot pilot)
 	{
-
-	}
-
-	public void UpdateUIWeapons()
-	{
-
+		//Setup quick panel
+		ArmorHOutput = Body["head"].Armor["external"];
+		ArmorLAOutput = Body["left arm"].Armor["external"];
+		ArmorRAOutput = Body["right arm"].Armor["external"];
+		ArmorLLOutput = Body["left leg"].Armor["external"];
+		ArmorRLOutput = Body["right leg"].Armor["external"];
+		ArmorLTOutput = Body["left torso"].Armor["external"];
+		ArmorRTOutput = Body["right torso"].Armor["external"];
+		ArmorCTOutput = Body["center torso"].Armor["external"];
+		//Setup large panel
+		ArmorHeadOutput = Body["head"].Armor["external"];
+		ArmorLeftArmOutput = Body["left arm"].Armor["external"];
+		ArmorRightArmOutput = Body["right arm"].Armor["external"];
+		ArmorLeftLegOutput = Body["left leg"].Armor["external"];
+		ArmorRightLegOutput = Body["right leg"].Armor["external"];
+		ArmorLeftTorsoOutput = Body["left torso"].Armor["external"];
+		ArmorRightTorsoOutput = Body["right torso"].Armor["external"];
+		ArmorCenterTorsoOutput = Body["center torso"].Armor["external"];
 	}
 
 	public void SelectWeapon(int weapon)
 	{
-		
+		SelectedWeapon = Weapons[weapon];
+	}
+
+	public void InitInventory() 
+	{
+		Weapons = new List<Weapon>();
+		foreach(KeyValuePair<string,Part> item in Body)
+		{
+			Debug.Log(item.Value.Short);
+			foreach(Component component in item.Value.Components)
+			{
+				Debug.Log(component.Short);
+				if(component.GetType() == "weapon")
+					Weapons.Add(component);
+			}
+		}
 	}
 }
