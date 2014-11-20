@@ -3,12 +3,10 @@ using System.Collections.Generic;
 
 public class AmmoExplosion : Ammunition
 {
-	static public List<string> Ammo = new List<string>();
-
 	public AmmoExplosion(int damage)
 	{
 		DamageType = "explosive";
-		Damage = damage;
+		Damage["max"] = damage;
 		Range = 0;
 	}
 }

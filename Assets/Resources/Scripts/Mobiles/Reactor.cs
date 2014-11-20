@@ -24,6 +24,11 @@ public class Reactor : Component
 		Power = energy;
 	}
 
+    public override string GetSystem()
+    {
+        return "reactor";
+    }
+
 	public override float EventGeneratePower()
 	{
 		float efficiency = 100.0f - (float)Status;

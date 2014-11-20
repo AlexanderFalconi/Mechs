@@ -1,9 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Tile : MonoBehaviour {
-	public Vector3 Position;
-	public string ID;
+public class Tile : Entity {
+
+	public Tile()
+	{
+		Size = 10;
+	}
 	
 	public int GetDodge()
 	{
@@ -15,9 +18,4 @@ public class Tile : MonoBehaviour {
 		audio.Play();
 	}
 
-	public void SetPosition(Vector3 pos)
-	{
-		Position = pos;
-		transform.position = pos;
-	}
 }

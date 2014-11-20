@@ -6,16 +6,19 @@ public class Mech : Mobile {
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
 	private int Posture = 1;//0: prone, 1: stand, 2: jump
-	public int Size = 0;//1: infantry, 2: suit, 3: car, 4: tank, 5: light mech, 6: medium mech, 7: heavy mech, 8: small structure, 9: large structure, 10: tile
 	private float Mass = 0.0f;
 	public float Energy = 0.0f;
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion;//Mech attributes
 	public Pilot PilotOb = null;
-	public Weapon SelectedWeapon;
-	public Vector3 Position, Facing;
-	public Engine Environment;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
-	public Player Controller;
+
+	public override Transform BindController(Player who)
+	{
+		UpdateInterface();
+		base.BindController(who);
+		Controller.InitInventory(Body);//TEMP: Need to just have this run at completion.
+		return transform;
+	}
 
 	public bool LoadPilot(Pilot pilot)
 	{
@@ -34,13 +37,6 @@ public class Mech : Mobile {
 		return false;//Couldn't find a cockpit
 	}
 
-	public Transform BindController(Player who)
-	{
-		Controller = who;
-		UpdateInterface();
-		return transform;
-	}
-
 	public void UpdateInterface()
 	{
 		if(Controller)
@@ -54,17 +50,9 @@ public class Mech : Mobile {
 			Controller.UpdateUILocomotion(Locomotion);
 			Controller.UpdateUISpeed(Speed["walk"], Speed["run"], Speed["jump"], Speed["momentum"], Speed["moved"]);
 			Controller.UpdateUIPilot(PilotOb);
+			Controller.UpdateUIArmor(Body);
 		}
 		//else passthrough
-	}
-
-	public void SetPosition(Vector3 pos, Vector3 face)
-	{
-		Position = pos;
-		transform.position = pos;
-		Facing = face;
-		faceDir = face;
-		moveDir = face;
 	}
 
 	public void SetMass(float mass, Chassis chassis)
@@ -94,11 +82,11 @@ public class Mech : Mobile {
 			tmp *= chassis.Internal;//Get the portion of internal structure
 			tmp -= tmp%0.25f;//Round down to minimums of 0.25
 			totalIntRem -= tmp;//Reduce total accordingly
-			Body[item].Armors["internal"] = new Armor(tmp);
+			AddArmor(item, "internal", chassis.Generate(tmp));//Set internal armor
 			Body[item].Proportion["mass"] = tmp;//Set mass equal to internal structure as initial
 		}
 		Body["center torso"].Proportion["max mass"] += totalMassRem;//Add excess to center torso
-		Body["center torso"].Armors["internal"].AddArmor(totalIntRem);
+		AddArmor("center torso", "internal", chassis.Generate(totalIntRem));//Set internal armor
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
 		UpdateInterface();
 	}
@@ -113,9 +101,9 @@ public class Mech : Mobile {
 		return Body[limb].Install(part);
 	}
 
-	public void AddArmor(string limb, string loc, float mass)
+	public void AddArmor(string limb, string loc, Armor armor)
 	{
-		Body[limb].AddArmor(loc, mass);
+		Body[limb].AddArmor(loc, armor);
 	}
 
 	public string GetClass()
@@ -138,8 +126,7 @@ public class Mech : Mobile {
 	{
 		Speed["momentum"] = 0;
 		Speed["moved"] = 0;
-		foreach(Weapon weapon in Weapons)
-			weapon.Discharged = 0;//Reset firing
+			//weapon.Discharged = 0;//Reset firing
 		if(!PilotOb.Conscious)
 		{//Knocked out
 			PilotOb.EventConsciousness();//Try to wake up
@@ -169,7 +156,7 @@ public class Mech : Mobile {
 			else
 				tmp.Add(move);
 			Speed["moved"]++;
-			Environment.EventMove(this.transform, move);
+			Environment.EventMove(this, move);
 			Position = move;
 			Facing = Position - move;
 		}
@@ -191,82 +178,148 @@ public class Mech : Mobile {
 		Posture = 2;//Airborne
 		isReady = false;
 		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
-	}	
+	}
 
-	public void OrderFire(Transform target, Weapon weapon, int shots)
+	public List<Weapon> GetSelectedWeapons()
 	{
-		if(!CanFire(weapon, target.position))
-			return;
-		Ammunition ammo = weapon.Loaded;
-		if(ammo.Amount < shots)
-			shots = ammo.Amount;
-		for(int i = 0; i < shots; i++)
+		List<Weapon> weapons = new List<Weapon>();
+		foreach(KeyValuePair<string,Part> item in Body)
 		{
-			if(ammo.EventDischarge())
+			foreach(Component component in item.Value.Components)
 			{
-				float result;
-				List<Vector3> steps = GetDirectSteps(Position, target.GetComponent<Mech>().Position);
-				Dictionary<string,float[]> scan = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f} },{"y", new float[] {0.0f, 0.0f} },{"z", new float[] {0.0f, 0.0f} }};
-				Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
-				List<float[]> chance;
-				foreach(Vector3 step in steps)
-				{//For each step in the path
-					chance = new List<float[]>();
-					scan["x"][0] = Mathf.Floor(step.x);
-					scan["x"][1] = Mathf.Ceil(step.x);
-					partial["x"][0] = 1.0f - step.x%1.0f;
-					partial["x"][1] = step.x%1.0f;
-					scan["y"][0] = Mathf.Floor(step.y);
-					scan["y"][1] = Mathf.Ceil(step.y);
-					partial["y"][0] = 1.0f - step.y%1.0f;
-					partial["y"][1] = step.y%1.0f;
-					scan["z"][0] = Mathf.Floor(step.z);
-					scan["z"][1] = Mathf.Ceil(step.z);
-					partial["z"][0] = 1.0f - step.z%1.0f;
-					partial["z"][1] = step.z%1.0f;
-					for(int y = 0; y <= 1; y++)
-					{//Foreach possible tile that could be hit, get a random chance and assign to the tile
-						for(int z = 0; z <= 1; z++)
-						{
-							for(int x = 0; x <= 1; x++)
-								chance.Add(new float[] {x, y, z, scan["x"][x]*partial["x"][x]*scan["y"][y]*partial["y"][y]*scan["z"][z]*partial["z"][z]});
-						}
-					}
-					result = Random.Range(0.1f, 100.0f);
-					foreach(float[] ch in chance)
-					{//Take the random chances to hit each tile, and find the tile that's hit
-						result -= ch[3];
-						if(result <= 0)
-						{//Found the tile to hit, see if an entity is there
-							if(Environment.Grid[(int)ch[0],(int)ch[1],(int)ch[2]] != null)//An entity is here
-							{
-								Transform potential = Environment.Grid[(int)ch[0], (int)ch[1], (int)ch[2]][0];//Takes the first element of the list for now
-								if(potential == target)
-									EventRangedAttack(target, ammo);//Try to hit intended target
-								else
-									EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
-							}
-							break;//Else, no entity is here
-						}
-					}
-				}
-				//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION				
+				if(component.GetSystem() == "weapon" && component.Selected)
+					weapons.Add((Weapon)component);
 			}
+		}	
+		return weapons;
+	}
+
+	public void OrderFire(Entity target)
+	{
+		Debug.Log("Target: "+target);
+		foreach(Weapon weapon in GetSelectedWeapons())
+		{
+			Debug.Log("Weapon: "+weapon);
+			int shots = weapon.RateOfFire["set"];
+			if(!CanFire(weapon, target.Position))
+				return;
+			Ammunition ammo = weapon.Loaded;
+			Debug.Log("Yep, can fire.");
+			for(int i = 0; i < shots; i++)
+			{
+				if(weapon.EventDischarge())
+				{
+					float result;
+					Debug.Log(target.Position);
+					List<Vector3> steps = GetDirectSteps(Position, target.Position);
+					Dictionary<string,int[]> scan = new Dictionary<string,int[]>() {{"x", new int[] {0, 0} },{"y", new int[] {0, 0} },{"z", new int[] {0, 0} }};
+					Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
+					foreach(Vector3 step in steps)
+					{//For each step in the path
+						Debug.Log("STEP: "+step);
+						scan["x"][0] = Mathf.FloorToInt(step.x);
+						scan["x"][1] = Mathf.CeilToInt(step.x);
+						partial["x"][1] = step.x%1.0f;
+						partial["x"][0] = 1.0f - partial["x"][1];
+						scan["y"][0] = Mathf.FloorToInt(step.y);
+						scan["y"][1] = Mathf.CeilToInt(step.y);
+						partial["y"][1] = step.y%1.0f;
+						partial["y"][0] = 1.0f - partial["y"][1];
+						scan["z"][0] = Mathf.FloorToInt(step.z);
+						scan["z"][1] = Mathf.CeilToInt(step.z);
+						partial["z"][1] = step.z%1.0f;
+						partial["z"][0] = 1.0f - partial["z"][1];
+						result = Random.Range(0.01f, 1.00f);
+						Debug.Log("Core Result: "+result);
+						for(int y = 0; y <= 1; y++)
+						{//Foreach possible tile that could be hit, get a random chance and assign to the tile
+							for(int z = 0; z <= 1; z++)
+							{
+								for(int x = 0; x <= 1; x++)
+								{
+									Debug.Log(scan["x"][x]+", "+scan["y"][y]+", "+scan["z"][z]);
+									Debug.Log(partial["x"][x]+", "+partial["y"][y]+", "+partial["z"][z]);
+									Debug.Log(partial["x"][x]*partial["y"][y]*partial["z"][z]);
+									result -= partial["x"][x]*partial["y"][y]*partial["z"][z];
+									Debug.Log("Result: "+result);
+									if(result <= 0)
+									{//Found the tile to hit, see if an entity is there
+										Debug.Log("Try to hit...");
+										if(Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]].Count > 0)//An entity is here
+										{
+											Debug.Log("An entity is here...");
+											Entity potential = Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]][0];//Takes the first element of the list for now
+											if(potential == target)
+												EventRangedAttack((Mech)target, ammo);//Try to hit intended target
+											else
+												EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
+										}//Else, no entity is here
+										x = y = z = 2;//Force a break out of these 3 loops; move on to next step
+									}
+								}
+							}
+						}
+						if(ammo.Damage["remaining"] < 1)
+							break;//This round is spent, try next round
+					}
+					//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION				
+				}
+				else
+					break;//Out of rounds
+			}
+	        weapon.UpdateUI();
 		}
 	}
 
-	//handle amo expenditure
+	public bool OrderLoad(Weapon weapon)
+	{
+		foreach(Component component in weapon.Installed.Components)
+		{
+			Debug.Log("Checking: "+component.GetShort());
+			if(component.GetSystem() == "ammunition")
+			{
+				Debug.Log("Is Ammo: "+component.GetShort());
+				if(((Ammunition)component).Ammo.Contains(weapon.GetShort()))
+				{
+					Debug.Log("Weapon can contain: "+component.GetShort());
+					weapon.EventLoad((Ammunition)component);
+					return true;
+				}
+			}
+		}
+		return false;//Couldn't find
+	}
 
-	public void OrderReload(Weapon weapon, int max)
+	public bool OrderReload(Weapon weapon, int max = 0)
 	{
 		if(CanReload(weapon))
+		{
 			weapon.EventReload(max);
+			return true;
+		}
+		else
+			return false;
 	}
 
 	public bool CanFire(Weapon weapon, Vector3 target)
 	{
 		float[] arc = new float[2];
 		float degree;
+		Debug.Log("Loaded: "+weapon.Loaded);
+		if(weapon.Loaded == null)
+		{
+			if(!OrderLoad(weapon))
+				return false;
+			else//auto load
+				Debug.Log("Loading: "+weapon.GetShort());
+		}
+		if(weapon.Amount < 1)
+		{
+			if(!OrderReload(weapon))
+				return false;//Not enough ammo
+			else//auto reload
+				Debug.Log("Reloading: "+weapon.GetShort());
+		}
 		if(Energy < weapon.Energy["fire"])
 			return false;//Not enough energy
 		arc = weapon.Installed.GetFiringArc();
@@ -279,10 +332,10 @@ public class Mech : Mobile {
 
 	public bool CanReload(Weapon weapon)
 	{
-		if(Energy < weapon.Energy["reload"])
-			return false;//Not enough energy
+		if((Energy < weapon.Energy["reload"]) || (weapon.Loaded == null) || (weapon.Loaded.Amount < 1))
+			return false;//Not enough energy or nothing loaded or not enough remaining in the loaded ammo
 		else
-			return false;
+			return true;
 	}
 
 	public void EventLand()
@@ -295,23 +348,23 @@ public class Mech : Mobile {
 		}
 	}
 
-    public void EventMeleeAttack(Transform target, Part limb)
+    public void EventMeleeAttack(Mech target, Part limb)
     {
         int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
         Ammunition simulate = new Bludgeoning(limb.GetMeleeDamage());
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
-	 		EventDamage(target.GetComponent<Mech>(), simulate);//If actually hit
+	 		EventDamage(target, simulate);//If actually hit
 	 		limb.EventMeleeBacklash();//Sometimes can hurt self
  		}
     }
 
-    public void EventCollisionAttack(Transform target)
+    public void EventCollisionAttack(Mech target)
     {
-        int accuracy = PilotOb.Piloting - target.GetComponent<Mech>().PilotOb.Piloting + Body["center torso"].GetMeleeCR();
+        int accuracy = PilotOb.Piloting - target.PilotOb.Piloting + Body["center torso"].GetMeleeCR();
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
-			target.GetComponent<Mech>().EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
+			target.EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
 		 	Body["center torso"].EventMeleeBacklash();//Sometimes can hurt self
 		}
     }
@@ -335,27 +388,26 @@ public class Mech : Mobile {
 		}
     }    
 
-	public float EventRangedAttack(Transform target, Ammunition ammo)
-	{//Indirect fire
+	public float EventRangedAttack(Mech target, Ammunition ammo)
+	{//Direct fire
 		int accuracy = PilotOb.Gunnery;//Initialize at skill
 		accuracy += GetRangePenalty(target, ammo);
 		accuracy += GetMovementPenalty();
 		accuracy += GetAccuracyPenalty(ammo);//Lost actuators or other circumstances
-		if(target.tag != "Tile")
-			accuracy += target.GetComponent<Mech>().GetDodge();//not yet set
-		if(accuracy > 11)
-			accuracy = 11;
-		else if(accuracy < 0)
-			accuracy = 0;
+		accuracy += target.GetDodge();//not yet set
+		Debug.Log("Accuracy: "+accuracy);
+		accuracy = 1;//TEMP TEMP TEMP TEMP FOR TESTING NEVER MISS
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
-			return target.GetComponent<Mech>().EventDamage(this, ammo);
+			return target.EventDamage(this, ammo);
 		else
 			return 0.0f;
 	}
 
-	public float EventIndirectAttack(Transform potential, Ammunition ammo)
+	//NOTE, the returns are a problem because they dont soak the ammo discharge.
+
+	public float EventIndirectAttack(Entity potential, Ammunition ammo)
 	{//Indirect fire
-		if(Random.Range(0.1f, 100.0f) <= potential.GetComponent<Mech>().Size*potential.GetComponent<Mech>().Size)
+		if(Random.Range(0.1f, 100.0f) <= potential.Size*potential.Size)
 			return potential.GetComponent<Mech>().EventDamage(this, ammo);
 		else
 			return 0.0f;
@@ -414,17 +466,20 @@ public class Mech : Mobile {
 
 	public int EventDamage(Mech attacker, Ammunition ammo)
 	{
-		audio.Play();//TEMP: this should be moved to render
+		Debug.Log("UNIT HIT: "+this);
+		//audio.Play();//TEMP: this should be moved to render
 		string table = GetHitTable(attacker);//Get hit table
 		string location = "none";
 		string side = "external";//Flag to take from ordinary external
 		int result;
+		Debug.Log("Hit table: "+table);
 		if(table == "rear")
 		{
 			side = "rear";//Flag to take from rear armor
 			table = "front";//Rear table is same as front in most cases, just need to set the above flag to ensure rear armor is hit
 		}
 		result = Random.Range(1, 36);
+		Debug.Log("Dice roll: "+result);
 		foreach(KeyValuePair<string,Part> item in Body)
 		{//Determine hit location
 			result -= item.Value.HitTable[table];
@@ -434,6 +489,7 @@ public class Mech : Mobile {
 				break;//Done
 			}
 		}
+		Debug.Log("Body part hit: "+location);
 		return Body[location].EventDamage(ammo, side);
 	}
 
@@ -501,9 +557,9 @@ public class Mech : Mobile {
 			return 2;
 	}
 
-	public int GetRangePenalty(Transform target, Ammunition ammo)
+	public int GetRangePenalty(Mech target, Ammunition ammo)
 	{
-		float distance = Vector3.Distance(transform.position, target.position);
+		float distance = Vector3.Distance(Position, target.Position);
 		return Mathf.FloorToInt(distance/ammo.Range);
 	}
 

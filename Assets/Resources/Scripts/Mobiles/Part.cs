@@ -28,18 +28,12 @@ public class Part
 		return Proportion["max mass"] - Proportion["mass"];
 	}
 
-	public void AddArmor(string loc, float mass)
+	public void AddArmor(string loc, Armor armor)
 	{
-		if(Armors[loc] == null)
-		{
-			Armors[loc] = new Armor(mass);
-			Proportion["mass"] += mass;
-		}
-		else
-		{
-			Armors[loc].AddArmor(mass);
-			Proportion["mass"] += mass;
-		}
+		if(Armors[loc] != null)
+			Proportion["mass"] -= Armors[loc].Mass;
+		Armors[loc] = armor;
+		Proportion["mass"] += armor.Mass;
 	}
 
 	public virtual float GetStabilization()
@@ -55,69 +49,69 @@ public class Part
 		return 0;
 	}
 
-	public virtual int EventReload(string compatible, int max)
+	public void Consolidate(Ammunition ammo)
 	{
-		int found = 0;
-		int total = 0;
+		int max = ammo.Bundle - ammo.Amount;
 		foreach(Component item in Components)
 		{
-			if(item.Short == compatible)
-			{
-				found = item.EventReloading(max);
-				total += found;
-				max -= found;
-			}
-			if(max < 1)
-				break;
+			if(item.Short == ammo.Short)//Same types
+				ammo.Amount += item.EventReloading(max);
+			if(ammo.Amount >= ammo.Bundle)
+				return;//Done, found all we can
 		}
-		return total;
 	}
 
 	public virtual int EventDamage(Ammunition ammo, string side = "external")
 	{
 		int inflicted = 0;
 		int crit = 0;
-		int result, damage, damageR, hardness;
-		hardness = Armors[side].Hardness[ammo.DamageType];
-		if(ammo.Damage < Armors[side].Hardness[ammo.DamageType])
+		int damage, hardness;
+		if(Armors[side] != null)
 		{
-			ammo.Damage = 0;
-			return 0;//Armor absorbs the blow, but its ineffective.
+			Debug.Log(Armors[side].Short);
+			hardness = Armors[side].Hardness[ammo.DamageType];
+			if(ammo.Damage["remaining"] < hardness)
+				return 0;//Armor absorbs the blow, but its ineffective.
+			damage = ammo.Damage["remaining"] / hardness;//Convert to relative damage based on armor hardness
+			if(Armors[side].HP >= damage)
+			{//External armor soaks
+				inflicted += damage;//Record damage
+				Armors[side].HP -= damage;
+				ammo.Damage["remaining"] = 0;//Entire hit absorbed
+			}
+			else
+			{
+				inflicted += Armors[side].HP;//Record damage
+				ammo.Damage["remaining"] -= damage * Armors[side].HP;//Part of the hit absorbed
+				Armors[side].HP = 0;//Shear off all armor
+			}
+			Debug.Log(side+": "+Armors[side].HP);
 		}
-		damage = ammo.Damage / hardness;//Convert to relative damage based on armor hardness
-		damageR = ammo.Damage % hardness;//The remainder does not necessary truncate
-		result = Random.Range(1, hardness);//Chance of it applying depends on how high
-		if(result <= damageR)//Check to see if extra damage
-			damage++;//Add 1 extra damage
-		if(Armors[side].HP >= damage)
-		{//External armor soaks
-			inflicted += damage;//Record damage
-			damage = 0;
-			Armors[side].HP -= damage;
-			ammo.Damage = 0;//Armor absorbs the blow
-		}
-		else
+		if(ammo.Damage["remaining"] > 0)//Continue to internal
 		{
-			inflicted += Armors[side].HP;//Record damage
-			damage -= Armors[side].HP;
-			ammo.Damage -= Armors[side].HP * hardness;//Absorm some of the blow
-			Armors[side].HP = 0;//Shear off all armor
+			Debug.Log("ENTERED INTERNAL");
+			hardness = Armors["internal"].Hardness[ammo.DamageType];
+			if(ammo.Damage["remaining"] < hardness)
+				return 0;//Armor absorbs the blow, but its ineffective.
+			damage = ammo.Damage["remaining"] / hardness;//Convert to relative damage based on armor hardness
 			if(Armors["internal"].HP >= damage)
 			{//Internal armor soaks
 				inflicted += damage;//Record damage
 				crit = damage;
 				Armors["internal"].HP -= damage;
-				ammo.Damage = 0;
+				ammo.Damage["remaining"] = 0;//Entire hit absorbed
 			}
 			else
 			{
 				crit = Armors["internal"].HP;
 				inflicted += Armors["internal"].HP;//Record damage
 				damage -= Armors["internal"].HP;
-				ammo.Damage -= Armors["internal"].HP * hardness;//Absorm some of the blow
+				ammo.Damage["remaining"] -= Armors["internal"].HP * hardness;//Absorm some of the blow
 				Armors["internal"].HP = 0;//Shear off all armor
 			}
+			Debug.Log("Internal: "+Armors[side].HP);
 		}
+		Debug.Log("Inflicted: "+inflicted);
 		if(crit > 0)
 			EventCritical(crit);//Check for crits last because of possible ammo explosions
 		return inflicted;
@@ -125,21 +119,25 @@ public class Part
 
 	private void EventCritical(int damage)
 	{
+		Debug.Log("Criticals: "+damage);
 		float possible = Proportion["max mass"];
 		float result;
 		Dictionary<Component,int> crits = new Dictionary<Component,int>();
 		for(int i = 0; i < damage; i++)
 		{
 			result = Random.Range(0.0f, possible);
+			Debug.Log("Try: "+i+" Rand: "+result);
 			foreach(Component item in Components)
 			{
 				result -= item.GetMass();
 				if(result <= 0)
 				{
+					Debug.Log("Crit on "+item);
 					if(crits.ContainsKey(item))
 						crits[item]++;
 					else
 						crits[item]=1;
+					break;//Finished
 				}
 			}
 		}
@@ -188,5 +186,13 @@ public class Part
 	{
 		float[] arc = new float[] {0.0f, 0.0f};
 		return arc;
+	}
+
+	public string GetUILong()
+	{
+		if(Armors["rear"] != null)
+			return Armors["external"].HP+"/"+Armors["rear"].HP+"\n"+Armors["internal"].HP;
+		else
+			return Armors["external"].HP+"\n"+Armors["internal"].HP;
 	}
 }

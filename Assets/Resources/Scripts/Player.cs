@@ -1,65 +1,40 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class Player : MonoBehaviour 
 {
-	public Text EnergyOutput;
-	public Text SpeedOutput;
-	public Text MassOutput;
-	public Text RotationOutput;
-	public Text AccuracyOutput;
-	public Text LocomotionOutput;
-	public Text StabilizationOutput;
-	public Text MobilityOutput;
-	public Text BalanceOutput;
-	public Text MomentumOutput;
+	public Text EnergyOutput, SpeedOutput;
 	public Text PilotOutput;
-	public Text ArmorHOutput;
-	public Text ArmorLAOutput;
-	public Text ArmorRAOutput;
-	public Text ArmorLLOutput;
-	public Text ArmorRLOutput;
-	public Text ArmorLTOutput;
-	public Text ArmorRTOutput;
-	public Text ArmorCTOutput;
-	public Text ArmorLeftArmOutput;
-	public Text ArmorRightArmOutput;
-	public Text ArmorLeftLegOutput;
-	public Text ArmorRightLegOutput;
-	public Text ArmorLeftTorsoOutput;
-	public Text ArmorRightTorsoOutput;
-	public Text ArmorCenterTorsoOutput;
+	public Text MassOutput, RotationOutput, AccuracyOutput, LocomotionOutput, StabilizationOutput, MobilityOutput, BalanceOutput, MomentumOutput, 
+	ArmorHOutput, ArmorLAOutput, ArmorRAOutput, ArmorLLOutput, ArmorRLOutput, ArmorLTOutput, ArmorRTOutput, ArmorCTOutput, ArmorHeadOutput, 
+	ArmorLeftArmOutput, ArmorRightArmOutput, ArmorLeftLegOutput, ArmorRightLegOutput, ArmorLeftTorsoOutput, ArmorRightTorsoOutput, ArmorCenterTorsoOutput;
+	public Inventory PanelInventory;
+	public WeaponsArray PanelWeapons;
 	public Transform Controlling;
-	public List<Weapon> Weapons = new List<Weapon>();
-	private Weapon SelectedWeapon;
 	public bool androidFire = false;
 
 	private void Update () 
 	{
-		if(Controlling == null)
+		if(Controlling == null || (Camera.main.GetComponent<InteractiveCamera>().touched != ""))
 			return;//No control has been bind
 		else
 		{//Found control
+
 		 	if( Input.GetMouseButtonDown(0)  && !androidFire)
 			{//Left click
 				Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 				RaycastHit hit;
-		 
 				if( Physics.Raycast( ray, out hit, 100 ) )
-				{
-					if(hit.transform.GetComponent<Mech>() != null)
-						Controlling.GetComponent<Mech>().OrderMove(hit.transform.GetComponent<Mech>().Position);
-					else
-						Controlling.GetComponent<Mech>().OrderMove(hit.transform.GetComponent<Tile>().Position);				
-				}
+					Controlling.GetComponent<Mech>().OrderMove(hit.transform.GetComponent<Entity>().Position);				
 			}
 		 	if( Input.GetMouseButtonDown(1) || (Input.GetMouseButtonDown(0) && androidFire))
 			{//Right click
 				Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 				RaycastHit hit;
-				//if( Physics.Raycast( ray, out hit, 100 ) )
-				//	Controlling.GetComponent<Mech>().OrderFire(hit.transform);			
+				if( Physics.Raycast( ray, out hit, 100 ) )
+					Controlling.GetComponent<Mech>().OrderFire( hit.transform.GetComponent<Entity>());		
 			}
 		}
 	}
@@ -69,9 +44,9 @@ public class Player : MonoBehaviour
 		Controlling.GetComponent<Mech>().isDone = true;
 	}
 
-	public void BindControl(Transform entity)
+	public void BindControl(Entity entity)
 	{
-		Controlling = entity.GetComponent<Mech>().BindController(this);
+		Controlling = entity.BindController(this);
 	}
 
 	//UI Interface Functions
@@ -133,44 +108,38 @@ public class Player : MonoBehaviour
 			PilotOutput.text = pilot.UIReport();
 	}
 
-	public void UpdateUIArmor(Pilot pilot)
+	public void UpdateUIArmor(Dictionary<string,Part> body)
 	{
 		//Setup quick panel
-		ArmorHOutput = Body["head"].Armor["external"];
-		ArmorLAOutput = Body["left arm"].Armor["external"];
-		ArmorRAOutput = Body["right arm"].Armor["external"];
-		ArmorLLOutput = Body["left leg"].Armor["external"];
-		ArmorRLOutput = Body["right leg"].Armor["external"];
-		ArmorLTOutput = Body["left torso"].Armor["external"];
-		ArmorRTOutput = Body["right torso"].Armor["external"];
-		ArmorCTOutput = Body["center torso"].Armor["external"];
+		ArmorHOutput.text = body["head"].Armors["external"].HP.ToString();
+		ArmorLAOutput.text = body["left arm"].Armors["external"].HP.ToString();
+		ArmorRAOutput.text = body["right arm"].Armors["external"].HP.ToString();
+		ArmorLLOutput.text = body["left leg"].Armors["external"].HP.ToString();
+		ArmorRLOutput.text = body["right leg"].Armors["external"].HP.ToString();
+		ArmorLTOutput.text = body["left torso"].Armors["external"].HP.ToString();
+		ArmorRTOutput.text = body["right torso"].Armors["external"].HP.ToString();
+		ArmorCTOutput.text = body["center torso"].Armors["external"].HP.ToString();
 		//Setup large panel
-		ArmorHeadOutput = Body["head"].Armor["external"];
-		ArmorLeftArmOutput = Body["left arm"].Armor["external"];
-		ArmorRightArmOutput = Body["right arm"].Armor["external"];
-		ArmorLeftLegOutput = Body["left leg"].Armor["external"];
-		ArmorRightLegOutput = Body["right leg"].Armor["external"];
-		ArmorLeftTorsoOutput = Body["left torso"].Armor["external"];
-		ArmorRightTorsoOutput = Body["right torso"].Armor["external"];
-		ArmorCenterTorsoOutput = Body["center torso"].Armor["external"];
+		ArmorHeadOutput.text = body["head"].GetUILong();
+		ArmorLeftArmOutput.text = body["left arm"].GetUILong();
+		ArmorRightArmOutput.text = body["right arm"].GetUILong();
+		ArmorLeftLegOutput.text = body["left leg"].GetUILong();
+		ArmorRightLegOutput.text = body["right leg"].GetUILong();
+		ArmorLeftTorsoOutput.text = body["left torso"].GetUILong();
+		ArmorRightTorsoOutput.text = body["right torso"].GetUILong();
+		ArmorCenterTorsoOutput.text = body["center torso"].GetUILong();
 	}
 
-	public void SelectWeapon(int weapon)
+	public void InitInventory(Dictionary<string,Part> body) 
 	{
-		SelectedWeapon = Weapons[weapon];
-	}
-
-	public void InitInventory() 
-	{
-		Weapons = new List<Weapon>();
-		foreach(KeyValuePair<string,Part> item in Body)
+		foreach(KeyValuePair<string,Part> item in body)
 		{
-			Debug.Log(item.Value.Short);
+			//PanelArmor.AddArmor(item.Key);//Interface armor line
 			foreach(Component component in item.Value.Components)
 			{
-				Debug.Log(component.Short);
-				if(component.GetType() == "weapon")
-					Weapons.Add(component);
+				PanelInventory.AddItem(component);//Interface item line
+				if(component.GetSystem() == "weapon")//Interface weapon button
+					PanelWeapons.AddWeapon((Weapon)component);					
 			}
 		}
 	}

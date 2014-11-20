@@ -8,5 +8,11 @@ public class TitaniumBipedalMech : Chassis
 	public TitaniumBipedalMech()
 	{
 		SetInternal(0.10f);
+		Generate = new ArmorGenerator(GenerateTitaniumArmor);
+	}
+
+	public Armor GenerateTitaniumArmor(float mass)
+	{
+		return new Titanium(mass);
 	}
 }

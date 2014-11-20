@@ -7,4 +7,9 @@ public class Actuator : Component
 	{
 		SetMass(mass);
 	}
+
+    public override string GetSystem()
+    {
+        return "actuator";
+    }
 }

@@ -1,7 +1,12 @@
 YVETTE SITE
 ==========EGBERT MECHS
+//standard gyro 1T outputs 100. mass is needed to x1 walk, x2 run, x3 jump-walk, x4 jump-run
+//thrusters +50 propulsion per ton. max height based on actuator ratio (leg plus hip)
+// Use this for initialization
 EGBERT COMMODORE64
-Doterrain, random plus costs
+Do terrain, random plus costs
 plus water
 Do U.I.
-Do Camera
+Do camera
+
+start adding crap

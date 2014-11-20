@@ -8,5 +8,11 @@ public class SteelBipedalMech : Chassis
 	public SteelBipedalMech()
 	{
 		SetInternal(0.12f);
+		Generate = new ArmorGenerator(GenerateSteelArmor);
+	}
+
+	public Armor GenerateSteelArmor(float mass)
+	{
+		return new Steel(mass);
 	}
 }

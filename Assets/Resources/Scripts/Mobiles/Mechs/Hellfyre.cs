@@ -34,18 +34,25 @@ public class Hellfyre : Mech
 		AddComponent("center torso", new M2Central());//Add gyros
 		AddComponent("left leg", new X1Impulse());//Add thrusters
 		AddComponent("right leg", new X1Impulse());//Add thrusters
-		AddComponent("left arm", SelectedWeapon = new TC5());//Add weapons
-		AddComponent("right arm", new TC5());//Add weapons
-		AddArmor("center torso", "external", 1.0f);//Add armor
-		AddArmor("center torso", "rear", 1.0f);//Add armor
-		AddArmor("left torso", "external", 1.0f);//Add armor
-		AddArmor("left torso", "rear", 1.0f);//Add armor
-		AddArmor("right torso", "external", 1.0f);//Add armor
-		AddArmor("right torso", "rear", 1.0f);//Add armor
-		AddArmor("left arm", "external", 1.0f);//Add armor
-		AddArmor("right arm", "external", 1.0f);//Add armor
-		AddArmor("left leg", "external", 1.0f);//Add armor
-		AddArmor("right leg", "external", 1.0f);//Add armor
-		AddArmor("head", "external", 1.0f);//Add armor
+		AddComponent("left arm", new TC15());//Add weapons
+		AddComponent("left arm", new CC15Shell());//Add ammo
+		AddComponent("left arm", new LL1());//Add weapons
+		AddComponent("left arm", new LRM10());//Add weapons
+		AddComponent("left arm", new Arrow1Missile());//Add ammo
+		AddComponent("right arm", new TC15());//Add weapons
+		AddComponent("right arm", new CC15Shell());//Add ammo
+		AddComponent("right arm", new HMG1());//Add weapons
+		AddComponent("right arm", new Cal50Bullet());//Add ammo
+		AddArmor("center torso", "external", new Steel(1.0f));//Add armor
+		AddArmor("center torso", "rear", new Steel(1.0f));//Add armor
+		AddArmor("left torso", "external", new Steel(1.0f));//Add armor
+		AddArmor("left torso", "rear", new Steel(1.0f));//Add armor
+		AddArmor("right torso", "external", new Steel(1.0f));//Add armor
+		AddArmor("right torso", "rear", new Steel(1.0f));//Add armor
+		AddArmor("left arm", "external", new Steel(1.0f));//Add armor
+		AddArmor("right arm", "external", new Steel(1.0f));//Add armor
+		AddArmor("left leg", "external", new Steel(1.0f));//Add armor
+		AddArmor("right leg", "external", new Steel(1.0f));//Add armor
+		AddArmor("head", "external", new Steel(1.0f));//Add armor
 	}
 }

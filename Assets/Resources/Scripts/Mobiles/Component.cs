@@ -7,7 +7,14 @@ public class Component
     public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public Dictionary<string,float> Energy = new Dictionary<string,float>();
     public Part Installed;
+    public bool Selected = false;
     public string Short, Long;
+    public List<Interface> UI = new List<Interface>();
+
+    public virtual string GetSystem()
+    {
+        return "component";
+    }
 
     public virtual void EventInstall(Part part)
     {
@@ -24,7 +31,7 @@ public class Component
     	Mass = mass;
     }
 
-    public float GetMass()
+    public virtual float GetMass()
     {
         return Mass;
     }
@@ -34,6 +41,7 @@ public class Component
         Status += dmg;
     	if(Status > 3)
     		Status = 3;//0: ok, 1: stun, 2: damaged, 3: destroyed
+        Debug.Log("CRIT ON: "+this+" "+Status);
     }
 
     public virtual float GetBalance()
@@ -66,6 +74,11 @@ public class Component
         return 0.0f;
     }
 
+    public virtual float GetThrust()
+    {
+        return 0.0f;
+    }
+
     public virtual float EventGeneratePower()
     {
         return 0.0f;//Can't generate power
@@ -84,5 +97,36 @@ public class Component
     public virtual bool AddPersonell(Pilot pilot)
     {
         return false;//Doesn't hold personell
+    }
+
+    public string GetStatusLong()
+    {
+        switch(Status)
+        {
+            case 0:
+                return "OK";
+            case 1:
+                return "Stunned";
+            case 2: 
+                return "Damaged";
+            default: 
+                return "Destroyed";
+        }
+    }
+
+    public virtual string GetShort()
+    {
+        return Short;
+    }
+
+    public void BindUI(Interface ui)
+    {
+        UI.Add(ui);
+    }
+
+    public void UpdateUI()
+    {
+        foreach(Interface iface in UI)
+            iface.UpdateUI();
     }
 }

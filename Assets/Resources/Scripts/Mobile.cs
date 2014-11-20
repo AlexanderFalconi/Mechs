@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Mobile : MonoBehaviour {
+public class Mobile : Entity {
 	private float turnTo;
 	public Vector3 moveDir, faceDir;
 	public List<Vector3> moveTo;
@@ -81,6 +81,13 @@ public class Mobile : MonoBehaviour {
         turnTo -= step;
         if(turnTo == 0.0f)
         	faceDir = moveDir;
+	}
+
+	public override void SetPosition(Vector3 pos, Vector3 face)
+	{
+		faceDir = face;
+		moveDir = face;
+		base.SetPosition(pos, face);
 	}
 
     void OnMouseDown() {//TEMP
