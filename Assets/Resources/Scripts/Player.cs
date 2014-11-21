@@ -12,6 +12,7 @@ public class Player : MonoBehaviour
 	ArmorLeftArmOutput, ArmorRightArmOutput, ArmorLeftLegOutput, ArmorRightLegOutput, ArmorLeftTorsoOutput, ArmorRightTorsoOutput, ArmorCenterTorsoOutput;
 	public Inventory PanelInventory;
 	public WeaponsArray PanelWeapons;
+	public ActionsArray PanelActions;
 	public Transform Controlling;
 	public bool androidFire = false;
 

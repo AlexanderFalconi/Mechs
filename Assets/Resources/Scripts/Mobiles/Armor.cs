@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Armor : Component
+public class Armor
 {
 	static public int ArmorUnits = 8;//Per 0.25 mass
 	public float Mass;
@@ -15,11 +15,6 @@ public class Armor : Component
 		MaxHP = Mathf.FloorToInt(mass / 0.25f) * ArmorUnits;
 		HP = MaxHP;//Set initial to full
 	}
-
-    public override string GetSystem()
-    {
-        return "armor";
-    }
 
 	public string GetUILong()
 	{

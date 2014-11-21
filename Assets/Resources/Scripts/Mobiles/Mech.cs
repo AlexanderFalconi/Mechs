@@ -6,11 +6,17 @@ public class Mech : Mobile {
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
 	private int Posture = 1;//0: prone, 1: stand, 2: jump
-	private float Mass = 0.0f;
-	public float Energy = 0.0f;
+	private float Mass;
+	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"max", 0}, {"current", 0}};
+	public Dictionary<string,bool> Actions;
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion;//Mech attributes
 	public Pilot PilotOb = null;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
+
+	public Mech()
+	{
+		Actions = new Dictionary<string,bool>() {{"move", true}, {"turn", true}, {"prone", true}, {"stand", false}, {"jump", true}, {"punch", true}, {"kick", true}, {"push", true}};
+	}
 
 	public override Transform BindController(Player who)
 	{
@@ -42,7 +48,7 @@ public class Mech : Mobile {
 		if(Controller)
 		{
 			Controller.UpdateUIMass(Mass, Size);
-			Controller.UpdateUIEnergy(Energy);
+			Controller.UpdateUIEnergy(Energy["current"]);
 			Controller.UpdateUIBalance(Balance);
 			Controller.UpdateUIStabilization(Stabilization);
 			Controller.UpdateUIRotation(Rotation);
@@ -53,6 +59,19 @@ public class Mech : Mobile {
 			Controller.UpdateUIArmor(Body);
 		}
 		//else passthrough
+	}
+
+	public void UpdateActions()
+	{
+		if(Controller)
+		{
+			Controller.PanelActions.ClearActions();
+			foreach(KeyValuePair<string,bool> action in Actions)
+			{
+				if(action.Value)
+					Controller.PanelActions.AddAction(action.Key);
+			}
+		}
 	}
 
 	public void SetMass(float mass, Chassis chassis)
@@ -89,6 +108,17 @@ public class Mech : Mobile {
 		AddArmor("center torso", "internal", chassis.Generate(totalIntRem));//Set internal armor
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
 		UpdateInterface();
+	}
+
+	public bool AddEnergy(float energy)
+	{
+		if(Energy["current"]+energy < 0.0f)
+			return false;
+		else
+			Energy["current"] += energy;
+		if(Energy["current"] > Energy["max"])
+			Energy["current"] = Energy["max"];
+		return true;
 	}
 
 	public float GetMass()
@@ -132,10 +162,12 @@ public class Mech : Mobile {
 			PilotOb.EventConsciousness();//Try to wake up
 			isDone = true;//Skip this turn
 		}
-		Energy = 0;//Later on create alternate component and store power in batteries
+		Energy["current"] = 0;//Later on create alternate component and store power in batteries
 		foreach(KeyValuePair<string,Part> gen in Body)
-			Energy += gen.Value.EventGeneratePower();
+			AddEnergy(gen.Value.EventGeneratePower());
 		UpdateInterface();
+		UpdateActions();
+		Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
 		isDone = false;
 	}
 
@@ -267,7 +299,6 @@ public class Mech : Mobile {
 				else
 					break;//Out of rounds
 			}
-	        weapon.UpdateUI();
 		}
 	}
 
@@ -320,8 +351,6 @@ public class Mech : Mobile {
 			else//auto reload
 				Debug.Log("Reloading: "+weapon.GetShort());
 		}
-		if(Energy < weapon.Energy["fire"])
-			return false;//Not enough energy
 		arc = weapon.Installed.GetFiringArc();
 		degree = Vector3.Angle(Position, target);
 		if(degree < arc[0] || degree > arc[1])
@@ -332,7 +361,7 @@ public class Mech : Mobile {
 
 	public bool CanReload(Weapon weapon)
 	{
-		if((Energy < weapon.Energy["reload"]) || (weapon.Loaded == null) || (weapon.Loaded.Amount < 1))
+		if((weapon.Loaded == null) || (weapon.Loaded.Amount < 1))
 			return false;//Not enough energy or nothing loaded or not enough remaining in the loaded ammo
 		else
 			return true;

@@ -5,7 +5,6 @@ using UnityEngine.UI;
 public class WeaponsArray : MonoBehaviour
 {
         public GameObject weapon;//Button prefab
-        public Text WeaponLabel;
 
         public void AddWeapon(Weapon which)
         {

@@ -23,7 +23,8 @@ public class Weapon : Component
 			return;//Need to load something first
 		if(Reload["waiting"] > 0)
 			return;//Already reloading
-		Installed.Master.Energy -= Energy["reload"];
+		if(!Installed.Master.AddEnergy(-Energy["reload"]))
+			return;//Not enough energy
 		if((max == 0) || (max >= Capacity))
 			max = Capacity;
 		Amount +=Loaded.EventReloading(max);//Transfer ammo from loaded bundle into weapon
@@ -69,7 +70,8 @@ public class Weapon : Component
         if(Amount < 1)
             return false;
         Amount--;
-        Installed.Master.Energy -= Energy["fire"];
+        if(!Installed.Master.AddEnergy(-Energy["fire"]))
+        	return false;
         Loaded.Damage["remaining"] = Loaded.Damage["max"];//Prime the shot
         UpdateUI();
         return true;

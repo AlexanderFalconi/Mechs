@@ -4,7 +4,6 @@ using System.Collections.Generic;
 public class Arrow1Missile : Ammunition 
 {
 	public string[] Compatibility = new string[] {"head", "left arm", "right arm", "left leg", "right leg", "left torso", "right torso", "center torso"};
-	static public int Bundle = 20;
 	public Arrow1Missile()
 	{
 		Short = "Arrow-1 Missiles";
@@ -12,6 +11,7 @@ public class Arrow1Missile : Ammunition
 		Ammo = new List<string>() {"LRM-5", "LRM-10", "LRM-15", "LRM-20"};
 		Combustibility = 0.05f;
 		PrefabID = "Bullet";
+		Bundle = 20;
 		Amount = Bundle;
 		DamageType = "ballistic";
 		Damage["max"] = 20;

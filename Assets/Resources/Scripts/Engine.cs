@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class Engine : MonoBehaviour {
 	private static float[] Random = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
@@ -9,6 +10,7 @@ public class Engine : MonoBehaviour {
 	public Transform boundingBox, grass, hellfyre, bushwacker;
 	private Transform boundingBoxOb;
 	public List<Entity>[,,] Grid = new List<Entity>[30, 5, 30]; 
+	public DynamicInput TurnOutput;
 	// Use this for initialization
 	private void Start () 
 	{
@@ -77,6 +79,7 @@ public class Engine : MonoBehaviour {
 			}
 			if(Entities[turn].GetComponent<Mobile>().isDone)
 				NextTurn();
+			TurnOutput.Set("Turn: "+turn+" Movement Phase");
 		}
 	}
 
@@ -84,6 +87,7 @@ public class Engine : MonoBehaviour {
 	{
 		boundingBoxOb.position = Entities[turn].transform.position;
 		Entities[turn].GetComponent<Mech>().Interval();
+		TurnOutput.Set("Turn: 0 Deployment Phase");
 	}
 
 	private void NextTurn()

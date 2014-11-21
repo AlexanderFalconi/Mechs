@@ -126,7 +126,9 @@ public class Component
 
     public void UpdateUI()
     {
-        foreach(Interface iface in UI)
-            iface.UpdateUI();
+        foreach(Interface ui in UI)
+            ui.UpdateUI();
     }
+
+
 }

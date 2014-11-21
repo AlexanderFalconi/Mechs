@@ -11,6 +11,7 @@ public class Part
 	public List<string> Melee = new List<string>();
 	public Part Parent;//Connected to
 	public List<Part> Children = new List<Part>();
+	public List<Interface> UI = new List<Interface>();
 	public Mech Master;
 
 	public void Attach(Part limb, Mech who)
@@ -18,6 +19,11 @@ public class Part
 		Master = who;
 		Parent = limb;
 		limb.Children.Add(Parent);
+	}
+
+	public string GetShort()
+	{
+		return Short;
 	}
 
 	public virtual float Install(Component comp)
@@ -195,4 +201,15 @@ public class Part
 		else
 			return Armors["external"].HP+"\n"+Armors["internal"].HP;
 	}
+
+    public void BindUI(Interface ui)
+    {
+        UI.Add(ui);
+    }
+
+    public void UpdateUI()
+    {
+        foreach(Interface iface in UI)
+            iface.UpdateUI();
+    }
 }
