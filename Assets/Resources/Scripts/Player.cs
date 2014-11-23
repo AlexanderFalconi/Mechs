@@ -16,6 +16,12 @@ public class Player : MonoBehaviour
 	public Transform Controlling;
 	public bool androidFire = false;
 
+	private void Setup()
+	{
+		PanelWeapons.transform.parent.gameObject.SetActive(false);
+		PanelActions.transform.parent.gameObject.SetActive(true);
+	}
+
 	private void Update () 
 	{
 		if(Controlling == null || (Camera.main.GetComponent<InteractiveCamera>().touched != ""))
@@ -42,10 +48,10 @@ public class Player : MonoBehaviour
 
 	public void EndTurn()
 	{
-		Controlling.GetComponent<Mech>().isDone = true;
+		Controlling.GetComponent<Mobile>().isDone = true;
 	}
 
-	public void BindControl(Entity entity)
+	public void BindControl(Mech entity)
 	{
 		Controlling = entity.BindController(this);
 	}

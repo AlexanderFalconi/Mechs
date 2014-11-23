@@ -23,6 +23,7 @@ public class Mech : Mobile {
 		UpdateInterface();
 		base.BindController(who);
 		Controller.InitInventory(Body);//TEMP: Need to just have this run at completion.
+		Controller.PanelActions.AddActions(Actions);
 		return transform;
 	}
 
@@ -47,6 +48,16 @@ public class Mech : Mobile {
 	{
 		if(Controller)
 		{
+			if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
+			{
+				Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
+				Controller.PanelActions.transform.parent.gameObject.SetActive(true);
+			}
+			else
+			{
+				Controller.PanelWeapons.transform.parent.gameObject.SetActive(true);
+				Controller.PanelActions.transform.parent.gameObject.SetActive(false);
+			}
 			Controller.UpdateUIMass(Mass, Size);
 			Controller.UpdateUIEnergy(Energy["current"]);
 			Controller.UpdateUIBalance(Balance);
@@ -59,19 +70,6 @@ public class Mech : Mobile {
 			Controller.UpdateUIArmor(Body);
 		}
 		//else passthrough
-	}
-
-	public void UpdateActions()
-	{
-		if(Controller)
-		{
-			Controller.PanelActions.ClearActions();
-			foreach(KeyValuePair<string,bool> action in Actions)
-			{
-				if(action.Value)
-					Controller.PanelActions.AddAction(action.Key);
-			}
-		}
 	}
 
 	public void SetMass(float mass, Chassis chassis)
@@ -154,21 +152,30 @@ public class Mech : Mobile {
 
 	public void Interval()
 	{
-		Speed["momentum"] = 0;
-		Speed["moved"] = 0;
-			//weapon.Discharged = 0;//Reset firing
-		if(!PilotOb.Conscious)
-		{//Knocked out
-			PilotOb.EventConsciousness();//Try to wake up
-			isDone = true;//Skip this turn
-		}
-		Energy["current"] = 0;//Later on create alternate component and store power in batteries
-		foreach(KeyValuePair<string,Part> gen in Body)
-			AddEnergy(gen.Value.EventGeneratePower());
-		UpdateInterface();
-		UpdateActions();
-		Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
 		isDone = false;
+		if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
+		{
+			Speed["momentum"] = 0;
+			Speed["moved"] = 0;
+			if(!PilotOb.Conscious)
+			{//Knocked out
+				PilotOb.EventConsciousness();//Try to wake up
+				isDone = true;//Skip this turn
+			}
+			Energy["current"] = 0;//Later on create alternate component and store power in batteries
+			foreach(KeyValuePair<string,Part> gen in Body)
+				AddEnergy(gen.Value.EventGeneratePower());
+			UpdateInterface();
+		}
+		else if(Environment.Interval["phase"] == Engine.PHASE_WEAPON)
+		{
+			//TEMP: RESET FIRING PINS
+			UpdateInterface();
+		}
+		else//Engine.PHASE_DEPLOYMENT
+		{
+			UpdateActuators();
+		}
 	}
 
 	public void OrderMove(Vector3 pos)

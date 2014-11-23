@@ -9,7 +9,7 @@ public class Mobile : Entity {
 	public bool isReady = true;
 	public float rate = 2.0f;
 
-	private void Update () 
+	public override void Update () 
 	{
 		if(faceDir != moveDir)
 			EventTurn();

@@ -1,25 +1,45 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class ActionsArray : MonoBehaviour 
 {
+	public Dictionary<string,GameObject> Actions = new Dictionary<string,GameObject>();
     public GameObject action;//Button prefab
+    public string Selected;
 
-    public void AddAction(string which)
+    public void AddActions(Dictionary<string,bool> actions)
     {
-        GameObject itemUI = Instantiate(action) as GameObject;//Instantiate UI text
-        itemUI.name = "Action "+transform.childCount;
-        itemUI.transform.parent = gameObject.transform;
-        itemUI.transform.localScale = Vector3.one;//For some reason, changing the parent distorts the child and requires this hack.
-        itemUI.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);//For some reason, changing the parent distorts the child and requires this hack.
-        itemUI.GetComponent<DynamicAction>().Set(which);
-        //itemUI.GetComponent<Button>().onClick.AddListener(which.Select);//In case the weapon object needs to be selected
+		foreach(KeyValuePair<string,bool> which in actions)
+		{
+	        GameObject itemUI = Instantiate(action) as GameObject;//Instantiate UI text
+	        itemUI.name = "Action "+transform.childCount;
+	        itemUI.transform.parent = gameObject.transform;
+	        itemUI.transform.localScale = Vector3.one;//For some reason, changing the parent distorts the child and requires this hack.
+	        itemUI.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);//For some reason, changing the parent distorts the child and requires this hack.
+	        itemUI.GetComponent<DynamicAction>().Set(which.Key);
+	        itemUI.SetActive(which.Value);
+	        itemUI.GetComponent<Button>().onClick.AddListener(itemUI.GetComponent<DynamicAction>().Select);//In case the weapon object needs to be selected
+	        Actions[which.Key] = itemUI;
+		}
     }
 
-    public void ClearActions()
+    public void UpdateUI(Dictionary<string,bool> actions)
     {
-		while(transform.childCount>0)
-			GameObject.Destroy(transform.GetChild(0));
+    	foreach(KeyValuePair<string,GameObject> action in Actions)
+    		action.Value.SetActive(actions[action.Key]);
+    }
+
+    public void Select(string action)
+    {
+       	foreach(KeyValuePair<string,GameObject> button in Actions)
+    	{
+    		DynamicAction ob = button.Value.GetComponent<DynamicAction>();
+    		if(button.Key == action)
+    			ob.Selected = true;
+    		else
+    			ob.Selected = false;
+    		ob.UpdateUI();
+    	}
     }
 }

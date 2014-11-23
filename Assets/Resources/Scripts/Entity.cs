@@ -20,4 +20,9 @@ public class Entity : MonoBehaviour
 		Controller = who;
 		return transform;
 	}
+
+	public virtual void Update()
+	{
+
+	}
 }
