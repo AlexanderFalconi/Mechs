@@ -6,6 +6,7 @@ public class Hellfyre : Mech
 	public Hellfyre()
 	{
 		//Connect limb
+		Body["center torso"].Attach(this);
 		Body["left torso"].Attach(Body["center torso"], this);
 		Body["right torso"].Attach(Body["center torso"], this);
 		Body["head"].Attach(Body["center torso"], this);
@@ -15,13 +16,13 @@ public class Hellfyre : Mech
 		Body["right leg"].Attach(Body["right torso"], this);
 		//Chassis configuration
 		SetMass(50.0f, new TitaniumBipedalMech());//Set Mass and Structure
-		AddComponent("center torso", new M6Fusion(5.0f));//Add engine
-		AddComponent("left leg", new M1LegActuator(1.0f));//Add actuators
-		AddComponent("right leg", new M1LegActuator(1.0f));//Add actuators
-		AddComponent("left leg", new M1FootActuator(0.25f));//Add actuators
-		AddComponent("right leg", new M1FootActuator(0.25f));//Add actuators
-		AddComponent("left leg", new M1HipActuator(0.25f));//Add actuators
-		AddComponent("right leg", new M1HipActuator(0.25f));//Add actuators
+		AddComponent("center torso", new M6Fusion(15.0f));//Add engine
+		AddComponent("left leg", new M1LegActuator(1.5f));//Add actuators
+		AddComponent("right leg", new M1LegActuator(1.5f));//Add actuators
+		AddComponent("left leg", new M1FootActuator(1.0f));//Add actuators
+		AddComponent("right leg", new M1FootActuator(1.0f));//Add actuators
+		AddComponent("left leg", new M1HipActuator(1.0f));//Add actuators
+		AddComponent("right leg", new M1HipActuator(1.0f));//Add actuators
 		AddComponent("left arm", new M1ArmActuator(0.5f));//Add actuators
 		AddComponent("right arm", new M1ArmActuator(0.5f));//Add actuators
 		AddComponent("left arm", new M1HandActuator(0.25f));//Add actuators

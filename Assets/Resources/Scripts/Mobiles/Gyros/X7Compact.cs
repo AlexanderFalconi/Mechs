@@ -8,7 +8,8 @@ public class X7Compact : Gyro
 	{
 		Short = "X7 Compact Gyro";
 		Long = "A MantisWare X7 Compact Gyro. Its design allows for more flexible installation options. Despite its smaller size, it is as dense and heavy as MechTech's Mark-2.";
-		Stabilization = 80.0f;
-		SetMass(0.5f);
+		Stabilization = 40.0f;
+		SetMass(0.50f);
+		Energy["passive"] = 4.0f;
 	}
 }

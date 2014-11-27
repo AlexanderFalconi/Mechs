@@ -1,11 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Tile : Entity {
+public class Tile : Entity 
+{
+	int MoveCost;
 
 	public Tile()
 	{
 		Size = 10;
+		MoveCost = 1;//TEMP: For now this is default
 	}
 	
 	public int GetDodge()
@@ -18,4 +21,8 @@ public class Tile : Entity {
 		audio.Play();
 	}
 
+	public override string GetEntityType()
+	{
+		return "tile";
+	}
 }

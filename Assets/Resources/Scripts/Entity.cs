@@ -15,14 +15,19 @@ public class Entity : MonoBehaviour
 		Facing = face;
 	}
 
-	public virtual Transform BindController(Player who)
+	public Entity BindController(Player who)
 	{
 		Controller = who;
-		return transform;
+		return this;
 	}
 
 	public virtual void Update()
 	{
 
+	}
+
+	public virtual string GetEntityType()
+	{
+		return "entity";
 	}
 }

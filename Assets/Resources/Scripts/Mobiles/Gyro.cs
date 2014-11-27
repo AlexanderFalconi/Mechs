@@ -9,8 +9,14 @@ public class Gyro : Component {
         return "gyro";
     }
 
-	public override float GetStabilization()
+	public float GetStabilization()
 	{
 		return Stabilization;
 	}
+
+	public override void Interval()
+	{
+		Installed.Master.Stabilization += Stabilization;
+		base.Interval();
+  	}
 }

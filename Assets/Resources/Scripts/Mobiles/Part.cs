@@ -21,6 +21,12 @@ public class Part
 		limb.Children.Add(Parent);
 	}
 
+	public void Attach(Mech who)
+	{//This is the core component
+		Master = who;
+		Parent = null;
+	}
+
 	public string GetShort()
 	{
 		return Short;
@@ -40,14 +46,6 @@ public class Part
 			Proportion["mass"] -= Armors[loc].Mass;
 		Armors[loc] = armor;
 		Proportion["mass"] += armor.Mass;
-	}
-
-	public virtual float GetStabilization()
-	{
-		float stabilization = 0.0f;
-		foreach(Component item in Components)
-			stabilization += item.GetStabilization();
-		return Mathf.Floor(stabilization/Master.GetMass());
 	}
 	
 	public virtual int GetMeleeCR()
@@ -150,14 +148,6 @@ public class Part
 		foreach(KeyValuePair<Component,int> specific in crits)
 			specific.Key.EventDamage(specific.Value);
 	}	
-
-	public virtual float EventGeneratePower()
-	{
-		float power = 0.0f;
-		foreach(Component gen in Components)
-			power += gen.EventGeneratePower();
-		return power;
-	}
 
 	public virtual int GetMeleeDamage()
 	{

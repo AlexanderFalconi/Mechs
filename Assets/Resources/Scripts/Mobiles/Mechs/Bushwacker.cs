@@ -5,6 +5,7 @@ public class Bushwacker : Mech
 {
 	public Bushwacker()
 	{
+		Body["center torso"].Attach(this);
 		Body["left torso"].Attach(Body["center torso"], this);//Connect limb
 		Body["right torso"].Attach(Body["center torso"], this);
 		Body["head"].Attach(Body["center torso"], this);

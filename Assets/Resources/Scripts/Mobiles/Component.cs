@@ -44,46 +44,6 @@ public class Component
         Debug.Log("CRIT ON: "+this+" "+Status);
     }
 
-    public virtual float GetBalance()
-    {
-        return 0.0f;//Doesn't impact balance
-    }
-    
-    public virtual float GetRotation()
-    {
-        return 0.0f;//Doesn't impact rotation
-    }
-
-    public virtual float GetMobility()
-    {
-        return 0.0f;//Doesn't impact mobility
-    }
-
-    public virtual float GetStabilization()
-    {
-        return 0.0f;//Doesn't impact stabilization
-    }
-
-    public virtual float GetLocomotion()
-    {
-        return 0.0f;//Does not impact locomotion
-    }
-
-    public virtual float GetAccuracy()
-    {
-        return 0.0f;
-    }
-
-    public virtual float GetThrust()
-    {
-        return 0.0f;
-    }
-
-    public virtual float EventGeneratePower()
-    {
-        return 0.0f;//Can't generate power
-    }
-
     public virtual bool IsMeleeWeapon()
     {
         return false;//Isn't a melee weapon
@@ -130,5 +90,12 @@ public class Component
             ui.UpdateUI();
     }
 
-
+    public virtual void Interval()
+    {
+        if(Status == 1)
+            Status = 0;//Recover from stun
+        if(Energy.ContainsKey("passive"))//If uses passive energy, drain
+            Installed.Master.EventDrainEnergy(Energy["passive"]);
+        UpdateUI();
+    }
 }

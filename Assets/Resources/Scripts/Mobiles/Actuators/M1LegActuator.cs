@@ -11,25 +11,19 @@ public class M1LegActuator : Actuator
 		Long = "A MechTech Mark-1 leg actuator. It runs along the entire length of a leg and facilitates locomotion.";
 	}
 
-	public override float GetLocomotion()
+	public float GetLocomotion()
 	{
 		return GetMass() * 50.0f;
-	}
-
-	public override void EventInstall(Part part)
-	{
-		base.EventInstall(part);
-		Installed.Master.UpdateActuators();
-	}
-
-	public override void EventUninstall()
-	{
-		Installed.Master.UpdateActuators();
-		base.EventUninstall();
 	}
 
 	public override bool IsMeleeWeapon()
 	{
 		return true;
 	}
+
+	public override void Interval()
+	{
+		Installed.Master.Locomotion += GetLocomotion();
+		base.Interval();
+  	}
 }

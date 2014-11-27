@@ -56,6 +56,24 @@ public class Mobile : Entity {
 		//clone.gameObject.GetComponent<Mobile>().moveTo = target.transform.position;
 	}
 
+	public virtual void EventStand()
+	{
+		transform.Rotate(0, 0, -90);
+		transform.position += new Vector3(0.0f, 0.5f, 0.0f);
+	}
+
+	public virtual void EventProne()
+	{
+		transform.Rotate(0, 0, 90);
+		transform.position += new Vector3(0.0f, -0.5f, 0.0f);
+	}
+
+	public virtual void EventFall(int height)
+	{
+		transform.Rotate(0, 0, 90);
+		transform.position += new Vector3(0.0f, -0.5f, 0.0f);
+	}
+
 	private void EventMove()
 	{
         float step = rate * Time.deltaTime;

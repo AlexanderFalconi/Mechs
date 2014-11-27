@@ -8,7 +8,8 @@ public class Z55Variable : Gyro
 	{
 		Short = "Z55 Variable Gyro";
 		Long = "A GuerillaTek Z55 Variable Gyro. Its versatile design allows for installation virtually anywhere.";
-		Stabilization = 60.0f;
+		Stabilization = 40.0f;
 		SetMass(0.50f);
+		Energy["passive"] = 5.0f;
 	}
 }

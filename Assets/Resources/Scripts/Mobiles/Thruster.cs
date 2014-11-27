@@ -9,8 +9,14 @@ public class Thruster : Component {
 		return "thruster";
 	}
 
-	public override float GetThrust()
+	public float GetThrust()
 	{
 		return Thrust;
 	}
+
+	public override void Interval()
+	{
+		Installed.Master.Thrust += Thrust;
+		base.Interval();
+  	}
 }

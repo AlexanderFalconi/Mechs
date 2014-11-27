@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class Mech : Mobile {
+	private static int POSTURE_PRONE = 0;
+	private static int POSTURE_STAND = 1;
+	private static int POSTURE_JUMP = 2;
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
-	private int Posture = 1;//0: prone, 1: stand, 2: jump
+	private int Posture = POSTURE_STAND;
 	private float Mass;
-	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"max", 0}, {"current", 0}};
+	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"stored", 0}, {"current", 0}};
 	public Dictionary<string,bool> Actions;
-	public float Rotation, Stabilization, Balance, Mobility, Locomotion;//Mech attributes
+	public float Rotation, Stabilization, Balance, Mobility, Locomotion, Thrust;//Mech attributes
 	public Pilot PilotOb = null;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
 
@@ -18,13 +21,13 @@ public class Mech : Mobile {
 		Actions = new Dictionary<string,bool>() {{"move", true}, {"turn", true}, {"prone", true}, {"stand", false}, {"jump", true}, {"punch", true}, {"kick", true}, {"push", true}};
 	}
 
-	public override Transform BindController(Player who)
+	public new Mech BindController(Player who)
 	{
 		UpdateInterface();
 		base.BindController(who);
 		Controller.InitInventory(Body);//TEMP: Need to just have this run at completion.
 		Controller.PanelActions.AddActions(Actions);
-		return transform;
+		return this;
 	}
 
 	public bool LoadPilot(Pilot pilot)
@@ -62,7 +65,7 @@ public class Mech : Mobile {
 			Controller.UpdateUIEnergy(Energy["current"]);
 			Controller.UpdateUIBalance(Balance);
 			Controller.UpdateUIStabilization(Stabilization);
-			Controller.UpdateUIRotation(Rotation);
+			Controller.UpdateUIThrust(Thrust);
 			Controller.UpdateUIMobility(Mobility);
 			Controller.UpdateUILocomotion(Locomotion);
 			Controller.UpdateUISpeed(Speed["walk"], Speed["run"], Speed["jump"], Speed["momentum"], Speed["moved"]);
@@ -108,15 +111,18 @@ public class Mech : Mobile {
 		UpdateInterface();
 	}
 
-	public bool AddEnergy(float energy)
+	public bool EventDrainEnergy(float energy)
 	{
-		if(Energy["current"]+energy < 0.0f)
+		if(Energy["current"]-energy < 0.0f)
 			return false;
 		else
-			Energy["current"] += energy;
-		if(Energy["current"] > Energy["max"])
-			Energy["current"] = Energy["max"];
+			Energy["current"] -= energy;
 		return true;
+	}
+
+	public void AddEnergy(float energy)
+	{
+		Energy["current"] += energy;
 	}
 
 	public float GetMass()
@@ -152,52 +158,97 @@ public class Mech : Mobile {
 
 	public void Interval()
 	{
+		float mass = GetMass();
 		isDone = false;
-		if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
+		if(Environment.Interval["phase"] <= Engine.PHASE_ACTION)//Includes Engine.PHASE_DEPLOY
 		{
-			Speed["momentum"] = 0;
-			Speed["moved"] = 0;
+			Speed["momentum"] = Speed["moved"] = Speed["jumped"] = 0;
 			if(!PilotOb.Conscious)
 			{//Knocked out
 				PilotOb.EventConsciousness();//Try to wake up
 				isDone = true;//Skip this turn
 			}
-			Energy["current"] = 0;//Later on create alternate component and store power in batteries
+			Balance = Stabilization = Rotation = Mobility = Locomotion = Thrust = 0.0f;//Reset mech attributes
+			Energy["current"] = 0;
 			foreach(KeyValuePair<string,Part> gen in Body)
-				AddEnergy(gen.Value.EventGeneratePower());
-			UpdateInterface();
+			{
+				foreach(Component component in gen.Value.Components)
+					component.Interval();
+			}
+			Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
+			Speed["run"] = Speed["walk"] *3 / 2;
+			if(Speed["walk"] *3 % 2 > 0)
+				Speed["run"]++;//Round up run speed
+			Speed["jump"] = Mathf.FloorToInt(Thrust/mass);//Round down for jump distance
 		}
-		else if(Environment.Interval["phase"] == Engine.PHASE_WEAPON)
-		{
-			//TEMP: RESET FIRING PINS
-			UpdateInterface();
-		}
-		else//Engine.PHASE_DEPLOYMENT
-		{
-			UpdateActuators();
-		}
+		UpdateInterface();
 	}
 
-	public void OrderMove(Vector3 pos)
+	public override string GetEntityType()
 	{
-		if(isReady == false || Position == pos)
-			return;//Too busy to move
-		EventMove(GetMovementPath(GetDirectSteps(Position, pos)));
+		return "mech";
+	}
+
+	//name buttons punch kick etc?
+	//Also accidental collisions
+	//can't melee if jump
+	//punch kick etc should be added dynamically based on limbs
+	//have to change dynamic action to bind a limb
+	//when kick check other leg and disable kick
+	//click button--SELECT TARGET? logo or something?
+	//ray cast shouldn't go THROUGH ui buttons :/
+	//make prone work without target!!!
+	//make stand work without target!!!
+	//show hide actions
+	//case "turn":///////////////
+	//	EventMove(GetMovementPath(GetDirectSteps(Position, pos))); break;
+
+	private int GetMovementCost()
+	{
+		int x, y, z;
+		if(Posture == POSTURE_STAND)
+			return Environment.Grid[(int)Position.x][((int)Position.y)-1][(int)Position.z][0].MoveCost;
+		else if(Posture == POSTURE_JUMP)
+			return 1;//In midair all costs are 1
+		else
+			return 4;//Crawling
+	}
+
+	public void EventJump(List<Vector3> path)
+	{
+		Speed["jumped"] = 1;
+		Posture = POSTURE_JUMP;
+		EventMove(path);
+		Posture = POSTURE_STAND;
+		if(((Stabilization/GetMass() < 2.0f) || (Balance/GetMass() < 2.0f)) && (!EventManeuver(3)))
+			EventFall(1);
 	}
 
 	public void EventMove(List<Vector3> path)
 	{
+		int cost;
 		List<Vector3> tmp = new List<Vector3>();
 		foreach(Vector3 move in path)
 		{
-			if(Speed["moved"] >= Speed["run"])
+			if(((Posture == POSTURE_JUMP) && (Speed["moved"] >= Speed["jump"])) || ((Posture != POSTURE_JUMP) && (Speed["moved"] >= Speed["run"])))
 				break;
 			else
 				tmp.Add(move);
-			Speed["moved"]++;
+ 			cost = GetMovementCost();
+			if(!EventDrainEnergy(GetMovementEnergyCost(cost)))
+				break;//Not enough energy
+			Speed["moved"]+=cost;
+			Speed["momentum"]++;
 			Environment.EventMove(this, move);
 			Position = move;
+			//Debug.Log()
 			Facing = Position - move;
+			if(((Speed["moved"] > Speed["walk"]) && (Balance/GetMass() < 2.0f) && !EventManeuver(2)) || 
+				((Speed["moved"] <= Speed["walk"]) && (Balance/GetMass() < 1.0f) && !EventManeuver(1)))
+			{
+				EventFall(1);
+				break;//Can't move anymore, fell down
+			}
 		}
 		if(tmp.Count > 0)
 		{
@@ -449,47 +500,75 @@ public class Mech : Mobile {
 			return 0.0f;
 	}
 
-
-	public void UpdateActuators()
+	public float GetMovementEnergyCost(int mm)
 	{
-		Balance = Stabilization = Rotation = Mobility = Locomotion = 0.0f;
-		foreach(KeyValuePair<string,Part> item in Body)
+		float mass = GetMass();
+		float cost = 0.0f;
+		for(int i = 1; i <= mm; i++)
 		{
-			foreach(Component component in item.Value.Components)
-			{
-				Balance += component.GetBalance();
-				Stabilization += component.GetStabilization();
-				Rotation += component.GetRotation();
-				Mobility += component.GetMobility();
-				Locomotion += component.GetLocomotion();
-			}
+			if(Speed["moved"]+i <= Speed["walk"])
+				cost += mass;
+			else
+				cost += mass * (Speed["moved"]+i-Speed["walk"]);
 		}
-		Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
-		Speed["run"] = Speed["walk"] *3 / 2;
-		UpdateInterface();
+		return cost;
 	}
 
-	public float GetMovementPower()
+	public override void EventStand()
 	{
-		if(Speed["moved"] < Speed["walk"])
-			return Mass;
-		else
-			return (Speed["moved"] - Speed["walk"] + 1) * GetMass();
-	}
-
-	public void EventStand()
-	{
+		if(!EventDrainEnergy(GetMovementEnergyCost(2)))
+			return;//Not enough energy
 		Speed["moved"] += 2;
 		if(EventManeuver(0))
-			Posture = 1;//else failed to stand
+			Posture = POSTURE_STAND;//else failed to stand
+		base.EventStand();
 	}
 
-	private void EventFall(int height)
+	public override void EventProne()
 	{
-		//Facing = Random.Range(0,7); 
+		if(!EventDrainEnergy(GetMovementEnergyCost(1)))
+			return;//Not enough energy
+		Speed["moved"] += 1;
+		if(EventManeuver(-2))
+			Posture = POSTURE_PRONE;
+		else
+			EventFall(1);
+		base.EventProne();
+	}
+
+	public override void EventFall(int height)
+	{
+		Facing = faceDir = GetRandomFacing();
 		EventDamage(this, new Bludgeoning(Mathf.FloorToInt(GetMass()/10*height)));
 		if(!EventManeuver(height))
 			PilotOb.EventDamage(1);
+		base.EventFall(height);
+	}
+
+	public Vector3 GetRandomFacing()
+	{
+		int result = Random.Range(0, 8);
+		switch(result)
+		{
+			case 0:
+				return new Vector3(1.0f, 0.0f, 1.0f);
+			case 1:
+				return new Vector3(1.0f, 0.0f, 0.0f);
+			case 2:
+				return new Vector3(1.0f, 0.0f, -1.0f);
+			case 3:
+				return new Vector3(0.0f, 0.0f, 1.0f);
+			case 4:
+				return new Vector3(0.0f, 0.0f, -1.0f);
+			case 5:
+				return new Vector3(-1.0f, 0.0f, 1.0f);
+			case 6:
+				return new Vector3(-1.0f, 0.0f, 0.0f);
+			case 7:
+				return new Vector3(-1.0f, 0.0f, -1.0f);
+			default:
+				return new Vector3(0.0f, 0.0f, 0.0f);
+		}
 	}
 
 	public bool CanMove(int amount)
@@ -533,7 +612,12 @@ public class Mech : Mobile {
 	{
 		float angle = Vector3.Angle(other.transform.position, transform.position);
 		if(angle < 90.0f || angle > 270.0f)
-			return "front";
+		{
+			if(Posture == POSTURE_PRONE)
+				return "rear";//Face down, has to hit rear
+			else
+				return "front";
+		}
 		else if(angle >= 90.0f && angle <= 150.0f)
 			return "right";
 		else if(angle > 150.0f && angle < 210.0f)
@@ -546,12 +630,15 @@ public class Mech : Mobile {
 
 	public bool EventManeuver(int dc)
 	{
+		float mass = GetMass();
 		int attempt = PilotOb.Piloting + dc;
-		if(Stabilization/GetMass() < 0.25f)
+		if(Stabilization/mass < 0.5f)
 			attempt += 4;
-		else if(Stabilization/GetMass() < 0.5f)
+		else if(Stabilization/mass < 1.0f)
+			attempt += 3;
+		else if(Stabilization/mass < 1.5f)
 			attempt += 2;
-		else if(Stabilization/GetMass() < 1.0f)
+		else if(Stabilization/mass < 2.0f)
 			attempt += 1;
 		if(Random.Range(0.0f, 100.0f) <= Engine.GetThreshold(attempt))
 			return true;
@@ -562,29 +649,32 @@ public class Mech : Mobile {
 	public int GetDodge()
 	{
 		if(Speed["momentum"] <= 1)
-			return 0;
+			return 0 + Speed["jumped"];
 		else if(Speed["momentum"] <= 3)
-			return 1;
+			return 1 + Speed["jumped"];
 		else if(Speed["momentum"] <= 6)
-			return 2;
+			return 2 + Speed["jumped"];
 		else if(Speed["momentum"] <= 10)
-			return 3;
+			return 3 + Speed["jumped"];
 		else if(Speed["momentum"] <= 15)
-			return 4;
+			return 4 + Speed["jumped"];
 		else if(Speed["momentum"] <= 21)
-			return 5;
+			return 5 + Speed["jumped"];
 		else if(Speed["momentum"] <= 28)
-			return 6;
+			return 6 + Speed["jumped"];
 		else if(Speed["momentum"] <= 36)
-			return 7;
+			return 7 + Speed["jumped"];
 		else if(Speed["momentum"] <= 45)
-			return 8;
+			return 8 + Speed["jumped"];
 		else
-			return 9;
+			return 9 + Speed["jumped"];
 	}
 
 	public int GetAccuracyPenalty(Ammunition ammo)
 	{
+		int proneness = 0;
+		if(Posture == POSTURE_PRONE)
+			proneness = 2;
 		if(ammo.Installed.GetAccuracy() >= GetMass() * 2.0f)
 			return 0;
 		else if(ammo.Installed.GetAccuracy() >= GetMass())
@@ -596,17 +686,31 @@ public class Mech : Mobile {
 	public int GetRangePenalty(Mech target, Ammunition ammo)
 	{
 		float distance = Vector3.Distance(Position, target.Position);
-		return Mathf.FloorToInt(distance/ammo.Range);
+		int proneness = 0;
+		if(target.Posture == POSTURE_PRONE)
+		{
+			if(distance <= 1.0f)
+				proneness = -2;
+			else if(distance <= 2.0f)
+				proneness = -1;
+			else if(distance <= 3.0f)
+				proneness = 0;
+			else if(distance <= 4.0f)
+				proneness = 1;
+			else
+				proneness = 2;
+		}
+		return Mathf.FloorToInt(distance/ammo.Range) + proneness;
 	}
 
 	public int GetMovementPenalty()
 	{
-		if(Speed["moved"] == 0)
+		if(Speed["jumped"] > 0)
+			return 3;//jumped
+		else if(Speed["moved"] == 0)
 			return 0;//no penalty
 		else if(Speed["moved"] <= Speed["walk"])
 			return 1;//moved
-		else if(Posture == 2)
-			return 3;//in midair
 		else
 			return 2;//is running
 	}

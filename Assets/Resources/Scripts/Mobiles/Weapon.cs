@@ -23,13 +23,15 @@ public class Weapon : Component
 			return;//Need to load something first
 		if(Reload["waiting"] > 0)
 			return;//Already reloading
-		if(!Installed.Master.AddEnergy(-Energy["reload"]))
+		if(!Installed.Master.EventDrainEnergy(Energy["reload"]))
 			return;//Not enough energy
 		if((max == 0) || (max >= Capacity))
 			max = Capacity;
 		Amount +=Loaded.EventReloading(max);//Transfer ammo from loaded bundle into weapon
 		Installed.Consolidate(Loaded);//Try to consolidate ammo into the loaded ammunition
-		Reload["waiting"] = Reload["delay"];//Set reload lag
+		if(Installed.Master.Environment.Interval["phase"] != Engine.PHASE_DEPLOY)
+			Reload["waiting"] = Reload["delay"];//Set reload lag
+		//else reload is free
 		UpdateUI();
 	}
 
@@ -46,6 +48,7 @@ public class Weapon : Component
 			return;//Already loaded
 		Loaded = ammo;//Load and bind new ammo into this weapon
 		ammo.Loader = this;//Bind new ammo to weapon
+		EventReload(ammo.Loader.Amount);
 		UpdateUI();
 	}
 
@@ -70,7 +73,7 @@ public class Weapon : Component
         if(Amount < 1)
             return false;
         Amount--;
-        if(!Installed.Master.AddEnergy(-Energy["fire"]))
+        if(!Installed.Master.EventDrainEnergy(Energy["fire"]))
         	return false;
         Loaded.Damage["remaining"] = Loaded.Damage["max"];//Prime the shot
         UpdateUI();
@@ -81,4 +84,11 @@ public class Weapon : Component
 	{
 		return Amount.ToString()+"/"+Capacity.ToString();
 	}
+
+	public override void Interval()
+	{
+		if(Reload["waiting"] > 0)
+        	Reload["waiting"]--;//Tick through reload delay
+        base.Interval();
+  	}
 }

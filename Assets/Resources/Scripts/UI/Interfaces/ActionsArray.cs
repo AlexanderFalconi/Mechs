@@ -36,7 +36,10 @@ public class ActionsArray : MonoBehaviour
     	{
     		DynamicAction ob = button.Value.GetComponent<DynamicAction>();
     		if(button.Key == action)
-    			ob.Selected = true;
+            {
+                ob.Selected = true;
+                Selected = action;
+            }
     		else
     			ob.Selected = false;
     		ob.UpdateUI();

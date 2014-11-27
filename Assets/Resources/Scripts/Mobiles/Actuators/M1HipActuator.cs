@@ -11,25 +11,20 @@ public class M1HipActuator : Actuator
 		Long = "A MechTech Mark-1 hip actuator. It facilitates twisting of the torso and more agile turning.";
 	}
 
-	public override float GetMobility()
+	public float GetMobility()
 	{
 		return GetMass() * 35.0f;
 	}
 
-	public override float GetBalance()
+	public float GetBalance()
 	{
 		return GetMass() * 15.0f;
 	}
 
-	public override void EventInstall(Part part)
+	public override void Interval()
 	{
-		base.EventInstall(part);
-		Installed.Master.UpdateActuators();
-	}
-
-	public override void EventUninstall()
-	{
-		Installed.Master.UpdateActuators();
-		base.EventUninstall();
-	}
+		Installed.Master.Balance += GetBalance();
+		Installed.Master.Mobility += GetMobility();
+		base.Interval();
+  	}
 }

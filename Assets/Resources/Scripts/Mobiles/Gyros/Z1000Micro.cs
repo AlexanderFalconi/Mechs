@@ -8,7 +8,8 @@ public class Z1000Micro : Gyro
 	{
 		Short = "Z1000 Micro Gyro";
 		Long = "A GuerillaTek Z1000 Micro Gyro. A lightweight gyro typically installed in super-light mechs.";
-		Stabilization = 25.0f;
+		Stabilization = 20.0f;
 		SetMass(0.25f);
+		Energy["passive"] = 3.5f;
 	}
 }

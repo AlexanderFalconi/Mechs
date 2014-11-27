@@ -31,7 +31,10 @@ public class DynamicWeapon : Interface
 		}
 		if(BoundTo.Loaded != null)
 			LoadOutput.text = BoundTo.Loaded.Short;
-		AmmoOutput.text = "Ammo: "+BoundTo.GetAmmoReport();
+		if(BoundTo.Reload["waiting"] > 0)
+			AmmoOutput.text = "Reloading ("+BoundTo.Reload["waiting"]+")";
+		else
+			AmmoOutput.text = "Ammo: "+BoundTo.GetAmmoReport();
 		RateOutput.text = "Rate: "+BoundTo.RateOfFire["set"];
 	}
 }

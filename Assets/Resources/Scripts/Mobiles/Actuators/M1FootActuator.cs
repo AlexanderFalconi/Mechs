@@ -11,25 +11,20 @@ public class M1FootActuator : Actuator
 		Long = "A MechTech Mark-1 foot actuator. It attaches to the end of the foot and is necessary for balance and locomotion.";
 	}
 	
-	public override float GetMobility()
+	public float GetMobility()
 	{
 		return GetMass() * 15.0f;
 	}
 
-	public override float GetBalance()
+	public float GetBalance()
 	{
 		return GetMass() * 35.0f;
 	}
 
-	public override void EventInstall(Part part)
+	public override void Interval()
 	{
-		base.EventInstall(part);
-		Installed.Master.UpdateActuators();
-	}
-
-	public override void EventUninstall()
-	{
-		Installed.Master.UpdateActuators();
-		base.EventUninstall();
-	}
+		Installed.Master.Mobility += GetMobility();
+		Installed.Master.Balance += GetBalance();
+		base.Interval();
+  	}
 }
