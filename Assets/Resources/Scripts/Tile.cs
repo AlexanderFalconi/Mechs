@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Tile : Entity 
 {
-	int MoveCost;
+	public int MoveCost;
 
 	public Tile()
 	{
@@ -19,10 +19,5 @@ public class Tile : Entity
 	public void EventDamage(Bullet bullet)
 	{
 		audio.Play();
-	}
-
-	public override string GetEntityType()
-	{
-		return "tile";
 	}
 }

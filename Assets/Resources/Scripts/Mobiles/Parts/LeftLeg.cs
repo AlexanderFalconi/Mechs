@@ -5,7 +5,7 @@ public class LeftLeg : Leg
 {
 	public LeftLeg () : base()
 	{
-		Short = "left leg";
+		Short = "Left Leg";
 		HitTable = new Dictionary<string,int>() {{"front", 4}, {"left", 5}, {"right", 2}};
 	}
 

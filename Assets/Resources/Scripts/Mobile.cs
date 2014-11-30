@@ -107,8 +107,4 @@ public class Mobile : Entity {
 		moveDir = face;
 		base.SetPosition(pos, face);
 	}
-
-    void OnMouseDown() {//TEMP
- 		Debug.Log("Clicked");
-    }
 }

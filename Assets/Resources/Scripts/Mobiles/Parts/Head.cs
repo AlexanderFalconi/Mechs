@@ -5,9 +5,9 @@ public class Head : Part
 {
 	public Head () 
 	{
-		Short = "head";
+		Short = "Head";
 		HitTable = new Dictionary<string,int>() {{"front", 1}, {"left", 1}, {"right", 1}};
-		Proportion["ratio"] = 0.03f;
+		Proportion["ratio"] = 0.04f;
 	}
 	public override float[] GetFiringArc()
 	{

@@ -10,6 +10,6 @@ public class StandardCockpit : Cockpit
 		Long = "A standard cockpit made of reinforced steel. It can house a single pilot and features a manual ejection lever.";
 		Personell = 1;
 		Ejection = "manual";
-		SetMass(0.5f);
+		SetMass(1.0f);
 	}
 }

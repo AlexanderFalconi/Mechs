@@ -5,9 +5,9 @@ public class RightTorso : Part
 {
 	public RightTorso () 
 	{
-		Short = "right torso";
+		Short = "Right Torso";
 		HitTable = new Dictionary<string,int>() {{"front", 5}, {"left", 4}, {"right", 7}};
-		Proportion["ratio"] = 0.15f;
+		Proportion["ratio"] = 0.14f;
 	}
 	public override float[] GetFiringArc()
 	{

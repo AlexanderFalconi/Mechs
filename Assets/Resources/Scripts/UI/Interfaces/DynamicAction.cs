@@ -7,20 +7,19 @@ public class DynamicAction : Interface
 	public Text NameLabel;
 	public string Action;
 	public bool Selected = false;
-
-	public void Set(string name)
-	{
-		Action = name;
-		NameLabel.text = name;
-	}
+    public ActionsArray.CanAction CanAction;
+    public ActionsArray.SimpleAction SimpleAction;
+    public ActionsArray.TargetedAction TargetedAction;
 
 	public void Select()
 	{
-		transform.parent.GetComponent<ActionsArray>().Select(Action);
+		transform.parent.GetComponent<ActionsArray>().Select(this);
 	}
 
 	public override void UpdateUI()
 	{
+		gameObject.SetActive(CanAction());
+		NameLabel.text = Action;
 		if(Selected)
 			NameLabel.fontStyle = FontStyle.Bold;
 		else

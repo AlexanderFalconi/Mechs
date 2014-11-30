@@ -11,6 +11,7 @@ public class Player : MonoBehaviour
 	ArmorHOutput, ArmorLAOutput, ArmorRAOutput, ArmorLLOutput, ArmorRLOutput, ArmorLTOutput, ArmorRTOutput, ArmorCTOutput, ArmorHeadOutput, 
 	ArmorLeftArmOutput, ArmorRightArmOutput, ArmorLeftLegOutput, ArmorRightLegOutput, ArmorLeftTorsoOutput, ArmorRightTorsoOutput, ArmorCenterTorsoOutput;
 	public Inventory PanelInventory;
+	public RectTransform PanelSide;
 	public WeaponsArray PanelWeapons;
 	public ActionsArray PanelActions;
 	public Mech Controlling;
@@ -28,124 +29,33 @@ public class Player : MonoBehaviour
 			return;//No control has been bound
 		else
 		{//Found control
-		 	if( Input.GetMouseButtonDown(0)  && (Controlling.Environment.Interval["phase"] == Engine.PHASE_ACTION))
+			if(Input.GetMouseButtonDown(0))
 			{//Left click
-				Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
-				RaycastHit hit;
-				if( Physics.Raycast( ray, out hit, 100 ) )
-					Order(hit.transform);				
-			}
-		 	if( Input.GetMouseButtonDown(0) && (Controlling.Environment.Interval["phase"] == Engine.PHASE_WEAPON))
-			{//Left click
-				Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
-				RaycastHit hit;
-				if( Physics.Raycast( ray, out hit, 100 ) )
-					OrderFire( hit.transform);		
+				if(!RectTransformUtility.RectangleContainsScreenPoint(PanelSide, Input.mousePosition, Camera.main))
+				{
+					Ray ray = Camera.main.ScreenPointToRay( Input.mousePosition );
+					RaycastHit hit;
+					if( Physics.Raycast( ray, out hit, 100) )
+						Order(hit.transform);
+				}
 			}
 		}
 	}
 	
 	public void Order(Transform what)
 	{
-		switch(PanelActions.Selected)
+		switch(Controlling.Environment.Interval["phase"])
 		{
-			case "move":
-				OrderMove(what); break;
-			case "crawl":
-				OrderCrawl(what); break;
-			case "turn":
-				OrderTurn(what); break;
-			case "prone":
-				OrderProne(what); break;
-			case "stand":
-				OrderStand(what); break;
-			case "punch":
-				OrderPunch(what); break;
-			case "kick":
-				OrderKick(what); break;
-			case "charge":
-				OrderCharge(what); break;
-			case "pounce":
-				OrderPounce(what); break;
-			case "jump":
-				OrderJump(what);
+			case Engine.PHASE_ACTION:
+				if(PanelActions.Selected != null && PanelActions.Selected.TargetedAction != null)
+					PanelActions.Selected.TargetedAction(what);
+				break;
+			case Engine.PHASE_WEAPON:
+				Controlling.AttemptFire(what.GetComponent<Entity>());
+				break;
+			default: //PHASE_DEPLOY
+				return;
 		}
-	}
-
-	public Entity PointOutLocation(Transform what)
-	{
-		Entity location = what.GetComponent<Entity>();
-		while(location.GetEntityType() != "tile")//Keep searching till terrain is found
-			location = Controlling.Environment.Grid[(int)Controlling.Position.x][((int)Controlling.Position.y)-1][(int)Controlling.Position.z][0];
-		return location;
-	}
-
-	public Entity PointOutTarget(Transform what)
-	{
-		Entity target = what.GetComponent<Entity>();
-		if(target.GetEntityType() != "mech")
-			return null;
-		else
-			return target;
-	}
-
-	public void OrderFire(Transform what)
-	{//TEMP: This eventually needs to be the painting of targets
-		Entity target = PointOutTarget(what);
-		if(target != null)
-			Controlling.OrderFire(target);		
-	}
-
-	public void OrderMove(Transform what)
-	{
-		Entity location = PointOutLocation(what);
-		Controlling.EventMove(location.GetComponent<Entity>().Position);
-	}
-
-	public void OrderCrawl(Transform what)
-	{
-		Entity location = PointOutLocation(what);
-		Controlling.EventMove(location.GetComponent<Entity>().Position);
-	}
-
-	public void OrderJump(Transform what)
-	{
-		Entity location = PointOutLocation(what);
-		Controlling.EventMove(location.GetComponent<Entity>().Position);
-	}
-
-	public void OrderProne()
-	{
-		Controlling.EventProne()
-	}
-
-	public void OrderStand()
-	{
-		Controlling.EventStand()
-	}
-
-	public void OrderMelee(Transform what)
-	{
-		Entity target = PointOutTarget(what);
-		if(target != null)
-			Controlling.EventMeleeAttack(target, Selected.Limb)
-		//Else no target
-	}
-
-	public void OrderCharge(Transform what)
-	{
-		Entity target = PointOutTarget(what);
-		Entity location = PointOutLocation(what);
-		if((target != null) && (location != null))
-			Controlling.EventCharge(location, target);
-	}
-
-	public void OrderPounce(Transform what)
-	{
-		Entity target = PointOutTarget(what);
-		Entity location = PointOutLocation(what);
-		if((target != null) && (location != null))
-			Controlling.EventPounce(location, target);
 	}
 
 	public void EndTurn()
@@ -236,17 +146,20 @@ public class Player : MonoBehaviour
 		ArmorCenterTorsoOutput.text = body["center torso"].GetUILong();
 	}
 
-	public void InitInventory(Dictionary<string,Part> body) 
+	public void Initialize(Dictionary<string,Part> body) 
 	{
 		foreach(KeyValuePair<string,Part> item in body)
 		{
 			//PanelArmor.AddArmor(item.Key);//Interface armor line
+			item.Value.InitActions();
+			PanelInventory.AddPart(item.Value);
 			foreach(Component component in item.Value.Components)
 			{
-				PanelInventory.AddItem(component);//Interface item line
+				PanelInventory.AddComponent(component);//Interface item line
 				if(component.GetSystem() == "weapon")//Interface weapon button
 					PanelWeapons.AddWeapon((Weapon)component);					
 			}
+			Debug.Log(item.Value.Short+" "+item.Value.Proportion["max mass"]);
 		}
 	}
 }

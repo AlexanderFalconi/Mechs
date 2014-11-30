@@ -25,6 +25,7 @@ public class M1HipActuator : Actuator
 	{
 		Installed.Master.Balance += GetBalance();
 		Installed.Master.Mobility += GetMobility();
+		Installed.Force += GetMobility();
 		base.Interval();
   	}
 }

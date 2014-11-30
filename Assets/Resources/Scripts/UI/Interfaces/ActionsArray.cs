@@ -4,45 +4,68 @@ using UnityEngine.UI;
 
 public class ActionsArray : MonoBehaviour 
 {
-	public Dictionary<string,GameObject> Actions = new Dictionary<string,GameObject>();
+	public List<DynamicAction> Actions = new List<DynamicAction>();
     public GameObject action;//Button prefab
-    public string Selected;
+    public DynamicAction Selected;
+    public delegate void SimpleAction();
+    public delegate void TargetedAction(Transform what);
+    public delegate bool CanAction();
 
-    public void AddActions(Dictionary<string,bool> actions)
+    public DynamicAction AddButton()
     {
-		foreach(KeyValuePair<string,bool> which in actions)
-		{
-	        GameObject itemUI = Instantiate(action) as GameObject;//Instantiate UI text
-	        itemUI.name = "Action "+transform.childCount;
-	        itemUI.transform.parent = gameObject.transform;
-	        itemUI.transform.localScale = Vector3.one;//For some reason, changing the parent distorts the child and requires this hack.
-	        itemUI.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);//For some reason, changing the parent distorts the child and requires this hack.
-	        itemUI.GetComponent<DynamicAction>().Set(which.Key);
-	        itemUI.SetActive(which.Value);
-	        itemUI.GetComponent<Button>().onClick.AddListener(itemUI.GetComponent<DynamicAction>().Select);//In case the weapon object needs to be selected
-	        Actions[which.Key] = itemUI;
-		}
+        GameObject itemUI = Instantiate(action) as GameObject;//Instantiate UI text
+        itemUI.name = "Action "+transform.childCount;
+        itemUI.transform.parent = gameObject.transform;
+        itemUI.transform.localScale = Vector3.one;//For some reason, changing the parent distorts the child and requires this hack.
+        itemUI.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);//For some reason, changing the parent distorts the child and requires this hack.
+        itemUI.GetComponent<Button>().onClick.AddListener(itemUI.GetComponent<DynamicAction>().Select);//In case the weapon object needs to be selected
+        return itemUI.GetComponent<DynamicAction>();
     }
 
-    public void UpdateUI(Dictionary<string,bool> actions)
+    public Interface AddAction(string label, CanAction conditionHandler, SimpleAction actionHandler)
     {
-    	foreach(KeyValuePair<string,GameObject> action in Actions)
-    		action.Value.SetActive(actions[action.Key]);
+        DynamicAction itemUI = AddButton();
+        itemUI.CanAction = conditionHandler;
+        itemUI.SimpleAction = actionHandler;
+        itemUI.Action = label;
+        Actions.Add(itemUI);
+        return itemUI as Interface;
     }
 
-    public void Select(string action)
+    public Interface AddAction(string label, CanAction conditionHandler, TargetedAction actionHandler)
     {
-       	foreach(KeyValuePair<string,GameObject> button in Actions)
+        DynamicAction itemUI = AddButton();
+        itemUI.CanAction = conditionHandler;
+        itemUI.TargetedAction = actionHandler;
+        itemUI.Action = label;
+        Actions.Add(itemUI);
+        return itemUI as Interface;
+    }
+
+    public void Select(DynamicAction act)
+    {
+       	foreach(DynamicAction button in Actions)
     	{
-    		DynamicAction ob = button.Value.GetComponent<DynamicAction>();
-    		if(button.Key == action)
+    		if(button == act)
             {
-                ob.Selected = true;
-                Selected = action;
+                if(button.SimpleAction != null)
+                    button.SimpleAction();//Its a simple action, just execute
+                else
+                {
+                    button.Selected = true;//Its a complex action, wait for further input
+                    Selected = button;
+                }
             }
     		else
-    			ob.Selected = false;
-    		ob.UpdateUI();
+    			button.Selected = false;
+    		button.UpdateUI();
     	}
+    }
+
+    public void Deselect()
+    {
+        Selected.Selected = false;
+        Selected.UpdateUI();
+        Selected = null;
     }
 }

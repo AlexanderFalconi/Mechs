@@ -5,7 +5,7 @@ public class LeftArm : Arm
 {
 	public LeftArm() : base()
 	{
-		Short = "left arm";
+		Short = "Left Arm";
 		HitTable = new Dictionary<string,int>() {{"front", 5}, {"left", 9}, {"right", 3}};
 	}
 

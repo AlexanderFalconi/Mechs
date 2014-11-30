@@ -128,7 +128,7 @@ public class Engine : MonoBehaviour
 		if(Interval["phase"] == PHASE_ACTION)
 		{
 			boundingBoxOb.gameObject.SetActive(true);
-			boundingBoxOb.position = Inventory[Interval["turn"]].transform.position;
+			boundingBoxOb.position = Inventory[Interval["turn"]].transform.position - new Vector3(0.0f, 0.5f, 0.0f);
 			TurnOutput.Set("Round: "+Interval["round"]+": Action Phase ("+Interval["turn"]+")");
 			Inventory[Interval["turn"]].Interval();
 		}
@@ -151,9 +151,9 @@ public class Engine : MonoBehaviour
 		Grid[(int)to.x,(int)to.y,(int)to.z].Add(entity);
 	}
 
-	private float GetCover(int size)
+	public List<Entity> GetGridLocation(Vector3 position)
 	{
-		return Mathf.Pow(size, 2.0f);
+		return Grid[(int)position.x,(int)position.y,(int)position.z];
 	}
 
 	public static float GetThreshold(int dc)

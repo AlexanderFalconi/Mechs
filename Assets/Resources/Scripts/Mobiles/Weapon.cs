@@ -52,6 +52,18 @@ public class Weapon : Component
 		UpdateUI();
 	}
 
+	public bool CanFire()
+	{
+		if(Installed.IsTapped)
+			return false;//Can't shoot after certain melees
+		else if(Loaded == null)
+			return false;
+		else if(Amount < 1)
+			return false;
+		else
+			return true;
+	}
+
 	public void Select()
 	{
 		if(Loaded == null)
@@ -91,4 +103,10 @@ public class Weapon : Component
         	Reload["waiting"]--;//Tick through reload delay
         base.Interval();
   	}
+
+	/* AUTOLOADING
+	if(!Installed.Master.OrderLoad(weapon))
+		return false;
+	if(!Installed.Master.OrderReload(weapon))
+		return false; */
 }

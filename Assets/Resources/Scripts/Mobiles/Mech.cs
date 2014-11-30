@@ -3,30 +3,27 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class Mech : Mobile {
-	private static int POSTURE_PRONE = 0;
-	private static int POSTURE_STAND = 1;
-	private static int POSTURE_JUMP = 2;
+	public const int POSTURE_PRONE = 0;
+	public const int POSTURE_STAND = 1;
+	public const int POSTURE_JUMP = 2;
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
-	private int Posture = POSTURE_STAND;
+	public int Posture = POSTURE_STAND;
 	private float Mass;
 	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"stored", 0}, {"current", 0}};
-	public Dictionary<string,bool> Actions;
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion, Thrust;//Mech attributes
 	public Pilot PilotOb = null;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
 
 	public Mech()
 	{
-		Actions = new Dictionary<string,bool>() {{"move", true}, {"turn", true}, {"prone", true}, {"stand", false}, {"jump", true}, {"punch", true}, {"kick", true}, {"push", true}};
+
 	}
 
 	public new Mech BindController(Player who)
 	{
-		UpdateInterface();
 		base.BindController(who);
-		Controller.InitInventory(Body);//TEMP: Need to just have this run at completion.
-		Controller.PanelActions.AddActions(Actions);
+		Controller.Initialize(Body);//TEMP: Need to just have this run at completion.
 		return this;
 	}
 
@@ -39,7 +36,6 @@ public class Mech : Mobile {
 				if(component.AddPersonell(pilot))
 				{//Found a cockpit
 					PilotOb = pilot;
-					UpdateInterface();
 					return true;//Done
 				}
 			}
@@ -47,7 +43,7 @@ public class Mech : Mobile {
 		return false;//Couldn't find a cockpit
 	}
 
-	public void UpdateInterface()
+	public void UpdateUI()
 	{
 		if(Controller)
 		{
@@ -61,6 +57,9 @@ public class Mech : Mobile {
 				Controller.PanelWeapons.transform.parent.gameObject.SetActive(true);
 				Controller.PanelActions.transform.parent.gameObject.SetActive(false);
 			}
+			foreach(KeyValuePair<string,Part> part in Body)
+				part.Value.UpdateUI();
+			//TEMP: These stats need to eventually convert to the callback system being used for mech actions
 			Controller.UpdateUIMass(Mass, Size);
 			Controller.UpdateUIEnergy(Energy["current"]);
 			Controller.UpdateUIBalance(Balance);
@@ -71,18 +70,18 @@ public class Mech : Mobile {
 			Controller.UpdateUISpeed(Speed["walk"], Speed["run"], Speed["jump"], Speed["momentum"], Speed["moved"]);
 			Controller.UpdateUIPilot(PilotOb);
 			Controller.UpdateUIArmor(Body);
-		}
-		//else passthrough
+		}//else passthrough
 	}
 
 	public void SetMass(float mass, Chassis chassis)
 	{
 		if(mass % 0.25f > 0.0f)
 			Debug.LogError("Mech mass must be in increments of 0.25.");
-		float totalMassRem = 100.0f;//Total mech mass
-		float totalIntRem = totalMassRem * chassis.Internal;//Total internal structure portion
-		totalIntRem -= totalIntRem%0.25f;//Round down to 0.25.
+		float totalMassRem;
+		float totalIntRem = mass * chassis.Internal;//Total internal structure portion
 		Mass = mass;//Set mass
+		totalIntRem -= totalIntRem%0.25f;//Round down to 0.25.
+		totalMassRem = mass - totalIntRem;//Total mech mass
 		if(mass < 10.0f)
 			Debug.LogError("Mech mass must be at least 10.0.");
 		else if(mass <= 40.0f)
@@ -108,7 +107,7 @@ public class Mech : Mobile {
 		Body["center torso"].Proportion["max mass"] += totalMassRem;//Add excess to center torso
 		AddArmor("center torso", "internal", chassis.Generate(totalIntRem));//Set internal armor
 		Body["center torso"].Proportion["mass"] += totalIntRem;//Add excess to center torso
-		UpdateInterface();
+		UpdateUI();
 	}
 
 	public bool EventDrainEnergy(float energy)
@@ -170,18 +169,15 @@ public class Mech : Mobile {
 			}
 			Balance = Stabilization = Rotation = Mobility = Locomotion = Thrust = 0.0f;//Reset mech attributes
 			Energy["current"] = 0;
-			foreach(KeyValuePair<string,Part> gen in Body)
-			{
-				foreach(Component component in gen.Value.Components)
-					component.Interval();
-			}
+			foreach(KeyValuePair<string,Part> part in Body)
+				part.Value.Interval();
 			Speed["walk"] = Mathf.FloorToInt(Locomotion/GetMass());
 			Speed["run"] = Speed["walk"] *3 / 2;
 			if(Speed["walk"] *3 % 2 > 0)
 				Speed["run"]++;//Round up run speed
 			Speed["jump"] = Mathf.FloorToInt(Thrust/mass);//Round down for jump distance
 		}
-		UpdateInterface();
+		UpdateUI();
 	}
 
 	public override string GetEntityType()
@@ -189,32 +185,27 @@ public class Mech : Mobile {
 		return "mech";
 	}
 
-	//name buttons punch kick etc?
-	//Also accidental collisions
-	//can't melee if jump
-	//punch kick etc should be added dynamically based on limbs
-	//have to change dynamic action to bind a limb
-	//when kick check other leg and disable kick
-	//click button--SELECT TARGET? logo or something?
-	//ray cast shouldn't go THROUGH ui buttons :/
-	//make prone work without target!!!
-	//make stand work without target!!!
-	//show hide actions
-	//case "turn":///////////////
-	//	EventMove(GetMovementPath(GetDirectSteps(Position, pos))); break;
 
-	private int GetMovementCost()
+
+	public void AttemptMove(Vector3 position)
 	{
-		int x, y, z;
+		EventMove(GetMovementPath(GetDirectSteps(Position, position))); 
+	}
+
+	private int GetMovementCost(Vector3 position)
+	{
 		if(Posture == POSTURE_STAND)
-			return Environment.Grid[(int)Position.x][((int)Position.y)-1][(int)Position.z][0].MoveCost;
+		{
+			position.y-=1;//Need the ground underneath where the mech's feet will be; not empty space
+			return ((Tile)Environment.GetGridLocation(position)[0]).MoveCost;
+		}
 		else if(Posture == POSTURE_JUMP)
 			return 1;//In midair all costs are 1
 		else
 			return 4;//Crawling
 	}
 
-	public void EventJump(List<Vector3> path)
+	public void AttemptJump(List<Vector3> path)
 	{
 		Speed["jumped"] = 1;
 		Posture = POSTURE_JUMP;
@@ -224,6 +215,12 @@ public class Mech : Mobile {
 			EventFall(1);
 	}
 
+	//Also accidental collisions
+	//when kick check other leg and disable kick
+	//click button--SELECT TARGET? logo or something?
+	//case "turn":///////////////
+	//dont do jump until we have new terrain maps
+
 	public void EventMove(List<Vector3> path)
 	{
 		int cost;
@@ -232,13 +229,12 @@ public class Mech : Mobile {
 		{
 			if(((Posture == POSTURE_JUMP) && (Speed["moved"] >= Speed["jump"])) || ((Posture != POSTURE_JUMP) && (Speed["moved"] >= Speed["run"])))
 				break;
-			else
-				tmp.Add(move);
- 			cost = GetMovementCost();
+  			cost = GetMovementCost(move);
 			if(!EventDrainEnergy(GetMovementEnergyCost(cost)))
 				break;//Not enough energy
 			Speed["moved"]+=cost;
 			Speed["momentum"]++;
+			tmp.Add(move);
 			Environment.EventMove(this, move);
 			Position = move;
 			//Debug.Log()
@@ -256,7 +252,7 @@ public class Mech : Mobile {
 			moveTo = tmp;
 			NextFace();			
 		}//else can't move
-		UpdateInterface();
+		UpdateUI();
 	}
 
 	public void OrderJump(Vector3 pos)
@@ -284,7 +280,7 @@ public class Mech : Mobile {
 		return weapons;
 	}
 
-	public void OrderFire(Entity target)
+	public void AttemptFire(Entity target)
 	{
 		Debug.Log("Target: "+target);
 		foreach(Weapon weapon in GetSelectedWeapons())
@@ -306,7 +302,7 @@ public class Mech : Mobile {
 					Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
 					foreach(Vector3 step in steps)
 					{//For each step in the path
-						Debug.Log("STEP: "+step);
+						//Debug.Log("STEP: "+step);
 						scan["x"][0] = Mathf.FloorToInt(step.x);
 						scan["x"][1] = Mathf.CeilToInt(step.x);
 						partial["x"][1] = step.x%1.0f;
@@ -320,24 +316,24 @@ public class Mech : Mobile {
 						partial["z"][1] = step.z%1.0f;
 						partial["z"][0] = 1.0f - partial["z"][1];
 						result = Random.Range(0.01f, 1.00f);
-						Debug.Log("Core Result: "+result);
+						//Debug.Log("Core Result: "+result);
 						for(int y = 0; y <= 1; y++)
 						{//Foreach possible tile that could be hit, get a random chance and assign to the tile
 							for(int z = 0; z <= 1; z++)
 							{
 								for(int x = 0; x <= 1; x++)
 								{
-									Debug.Log(scan["x"][x]+", "+scan["y"][y]+", "+scan["z"][z]);
-									Debug.Log(partial["x"][x]+", "+partial["y"][y]+", "+partial["z"][z]);
-									Debug.Log(partial["x"][x]*partial["y"][y]*partial["z"][z]);
+									//Debug.Log(scan["x"][x]+", "+scan["y"][y]+", "+scan["z"][z]);
+									//Debug.Log(partial["x"][x]+", "+partial["y"][y]+", "+partial["z"][z]);
+									//Debug.Log(partial["x"][x]*partial["y"][y]*partial["z"][z]);
 									result -= partial["x"][x]*partial["y"][y]*partial["z"][z];
-									Debug.Log("Result: "+result);
+									//Debug.Log("Result: "+result);
 									if(result <= 0)
 									{//Found the tile to hit, see if an entity is there
-										Debug.Log("Try to hit...");
+										//Debug.Log("Try to hit...");
 										if(Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]].Count > 0)//An entity is here
 										{
-											Debug.Log("An entity is here...");
+											//Debug.Log("An entity is here...");
 											Entity potential = Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]][0];//Takes the first element of the list for now
 											if(potential == target)
 												EventRangedAttack((Mech)target, ammo);//Try to hit intended target
@@ -395,20 +391,8 @@ public class Mech : Mobile {
 		float[] arc = new float[2];
 		float degree;
 		Debug.Log("Loaded: "+weapon.Loaded);
-		if(weapon.Loaded == null)
-		{
-			if(!OrderLoad(weapon))
-				return false;
-			else//auto load
-				Debug.Log("Loading: "+weapon.GetShort());
-		}
-		if(weapon.Amount < 1)
-		{
-			if(!OrderReload(weapon))
-				return false;//Not enough ammo
-			else//auto reload
-				Debug.Log("Reloading: "+weapon.GetShort());
-		}
+		if(!weapon.CanFire())
+			return false;
 		arc = weapon.Installed.GetFiringArc();
 		degree = Vector3.Angle(Position, target);
 		if(degree < arc[0] || degree > arc[1])
@@ -439,12 +423,34 @@ public class Mech : Mobile {
     {
         int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
         Ammunition simulate = new Bludgeoning(limb.GetMeleeDamage());
+        Debug.Log(accuracy);
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
 	 		EventDamage(target, simulate);//If actually hit
 	 		limb.EventMeleeBacklash();//Sometimes can hurt self
+	 		Debug.Log("MELEE HIT!");
  		}
+ 		else
+ 			Debug.Log("MELEE MISS!");
+ 		UpdateUI();
     }
+
+    /*
+    also do accidental charge
+    also do ram
+    for charge need 1 extra hex past target
+	*/
+	public void EventCharge(Vector3 pos, Entity target)
+	{
+		//(Vector3.Distance(Master.Position, target.Position) < 2.0f)
+
+	}
+
+	public void EventPounce(Vector3 pos, Entity target)
+	{
+		//(Vector3.Distance(Master.Position, target.Position) < 2.0f)
+	}
+
 
     public void EventCollisionAttack(Mech target)
     {
@@ -509,7 +515,7 @@ public class Mech : Mobile {
 			if(Speed["moved"]+i <= Speed["walk"])
 				cost += mass;
 			else
-				cost += mass * (Speed["moved"]+i-Speed["walk"]);
+				cost += mass * (Speed["moved"]+i+1-Speed["walk"]);
 		}
 		return cost;
 	}
@@ -522,6 +528,7 @@ public class Mech : Mobile {
 		if(EventManeuver(0))
 			Posture = POSTURE_STAND;//else failed to stand
 		base.EventStand();
+		UpdateUI();
 	}
 
 	public override void EventProne()
@@ -534,6 +541,7 @@ public class Mech : Mobile {
 		else
 			EventFall(1);
 		base.EventProne();
+		UpdateUI();
 	}
 
 	public override void EventFall(int height)
@@ -676,11 +684,11 @@ public class Mech : Mobile {
 		if(Posture == POSTURE_PRONE)
 			proneness = 2;
 		if(ammo.Installed.GetAccuracy() >= GetMass() * 2.0f)
-			return 0;
+			return 0 + proneness;
 		else if(ammo.Installed.GetAccuracy() >= GetMass())
-			return 1;
+			return 1 + proneness;
 		else
-			return 2;
+			return 2 + proneness;
 	}
 
 	public int GetRangePenalty(Mech target, Ammunition ammo)

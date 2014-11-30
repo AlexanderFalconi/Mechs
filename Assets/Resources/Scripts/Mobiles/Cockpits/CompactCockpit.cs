@@ -11,6 +11,6 @@ public class CompactCockpit : Cockpit
 		Long = "A compact cockpit made of a light-weight steel alloy. It can house a single pilot.";
 		Personell = 1;
 		Ejection = "none";
-		SetMass(0.25f);
+		SetMass(0.75f);
 	}
 }

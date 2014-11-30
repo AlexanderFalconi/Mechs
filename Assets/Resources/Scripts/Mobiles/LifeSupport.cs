@@ -9,6 +9,6 @@ public class LifeSupport : Component
 	{
 		Short = "Life Support";
 		Long = "A life support module that provides heat insulation as well as a reserve of oxygen.";
-		SetMass(0.25f);
+		SetMass(0.50f);
 	}
 }

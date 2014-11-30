@@ -10,8 +10,10 @@ public class Part
 	public Dictionary<string,Armor> Armors = new Dictionary<string,Armor>() {{"internal", null}, {"external", null}, {"rear", null}};
 	public List<string> Melee = new List<string>();
 	public Part Parent;//Connected to
+	public float Force = 0.0f;
 	public List<Part> Children = new List<Part>();
 	public List<Interface> UI = new List<Interface>();
+	public bool IsTapped = false;
 	public Mech Master;
 
 	public void Attach(Part limb, Mech who)
@@ -30,6 +32,11 @@ public class Part
 	public string GetShort()
 	{
 		return Short;
+	}
+
+	public float GetMass()
+	{
+		return Proportion["mass"];
 	}
 
 	public virtual float Install(Component comp)
@@ -197,9 +204,23 @@ public class Part
         UI.Add(ui);
     }
 
-    public void UpdateUI()
+    public virtual void InitActions()
+    {
+    	//TEMP: Some day dynamically generate the armor tables here
+    }
+
+    public void Interval()
+    {
+    	IsTapped = false;
+		Force = 0.0f;//Reset limb attributes
+		foreach(Component component in Components)
+			component.Interval();
+    }
+
+    public virtual void UpdateUI()
     {
         foreach(Interface iface in UI)
             iface.UpdateUI();
     }
+
 }
