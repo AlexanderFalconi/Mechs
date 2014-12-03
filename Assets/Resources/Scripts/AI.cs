@@ -17,10 +17,9 @@ public class AI : MonoBehaviour
 				foreach(Component component in item.Value.Components)
 				{
 					if(component.GetSystem() == "weapon")
-						component.Selected = true;//Always fire all
+						component.Select(GetComponent<Mech>().Environment.Inventory[0]);//Always fire all
 				}
 			}	
-			GetComponent<Mech>().AttemptFire(GetComponent<Mech>().Environment.Inventory[0]);	
 		}
 		else if(GetComponent<Mech>().Environment.Interval["phase"] == Engine.PHASE_DEPLOY)
 		{

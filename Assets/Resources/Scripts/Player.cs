@@ -51,7 +51,7 @@ public class Player : MonoBehaviour
 					PanelActions.Selected.TargetedAction(what);
 				break;
 			case Engine.PHASE_WEAPON:
-				Controlling.AttemptFire(what.GetComponent<Entity>());
+					PanelWeapons.TargetedAction(what); 
 				break;
 			default: //PHASE_DEPLOY
 				return;

@@ -16,6 +16,7 @@ public class Engine : MonoBehaviour
 	public List<Entity>[,,] Grid = new List<Entity>[30, 5, 30]; 
 	public bool isReady = false;
 	public DynamicInput TurnOutput;
+	public List<Weapon> Weapons = new List<Weapon>();
 	// Use this for initialization
 	private void Start () 
 	{
@@ -76,27 +77,35 @@ public class Engine : MonoBehaviour
 	
 	private void Update () 
 	{
-		if(isReady)
+		if(isReady && !isAnimating)
 		{
-			if(Interval["phase"] == PHASE_ACTION)
+			if(Weapons.Count > 0)
 			{
-				if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
-					Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
-				if(Inventory[Interval["turn"]].isDone)
-					NextTurn();
+				AttemptFire();
+				yield WaitForSeconds(3.0f));
 			}
-			else//PHASE_WEAPON or PHASE_DEPLOY
+			else
 			{
-				foreach(Mech mech in Inventory)
+				if(Interval["phase"] == PHASE_ACTION)
 				{
-					if(!mech.isDone)
-					{
-						if(mech.GetComponent<AI>() as AI != null)
-							mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
-						return;//Keep waiting
-					}
+					if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
+						Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
+					if(Inventory[Interval["turn"]].isDone)
+						NextTurn();
 				}
-				NextTurn();
+				else//PHASE_WEAPON or PHASE_DEPLOY
+				{
+					foreach(Mech mech in Inventory)
+					{
+						if(!mech.isDone)
+						{
+							if(mech.GetComponent<AI>() as AI != null)
+								mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
+							return;//Keep waiting
+						}
+					}
+					NextTurn();
+				}
 			}
 		}
 	}
@@ -111,6 +120,7 @@ public class Engine : MonoBehaviour
 				case PHASE_ACTION:
 					Interval["phase"]++; break;
 				case PHASE_WEAPON:
+					AttemptFire();
 					Interval["round"]++;//next round
 					Interval["turn"] = 0;//reset turns
 					Interval["phase"] = PHASE_ACTION; break;
@@ -143,6 +153,23 @@ public class Engine : MonoBehaviour
 				mech.Interval();
 		}
 		isReady = true;//The next turn is ready
+	}
+
+	public void RegisterWeapon(Weapon weapon)
+	{
+		Weapons.Add(weapon);
+	}
+
+	public void UnregisterWeapon(Weapon weapon)
+	{
+		Weapons.Remove(weapon);
+	}
+
+	public void AttemptFire()
+	{
+		Weapon weapon = Weapons.Pop();
+		weapon.Installed.Master.AttemptFire(weapon.Loaded, weapon.Selected);
+		weapon.Selected = null;
 	}
 
 	public void EventMove(Entity entity, Vector3 to)

@@ -7,6 +7,7 @@ public class Weapon : Component
 	public int Capacity;
 	public int Amount = 0;
 	public Ammunition Loaded;
+	public Entity Selected;
 	public List<string> Ammo;
 	public Dictionary<string,int> RateOfFire;
 	public Dictionary<string,int> Reload;
@@ -64,20 +65,13 @@ public class Weapon : Component
 			return true;
 	}
 
-	public void Select()
+	public void Select(Entity target)
 	{
-		if(Loaded == null)
-			Installed.Master.OrderLoad(this);
-		else if(Amount < 1)
-			Installed.Master.OrderReload(this);
+		Selected = target;
+		if(target != null)
+			Installed.Master.Environment.RegisterWeapon(this);
 		else
-		{
-			if(Selected)
-				Selected = false;
-			else
-				Selected = true;	
-		}
-		UpdateUI();
+			Installed.Master.Environment.UnregisterWeapon(this);
 	}
 
     public bool EventDischarge()
