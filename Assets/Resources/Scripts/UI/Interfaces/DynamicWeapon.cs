@@ -10,7 +10,7 @@ public class DynamicWeapon : Interface
 	public Text RateOutput;
     public Weapon BoundTo;
     public bool Selected = false;
-    public AudioClip[] SoundFX = new AudioClip[2];
+    public AudioClip[] SoundFX = new AudioClip[3];
 
 	public override void UpdateUI()
 	{
@@ -43,19 +43,25 @@ public class DynamicWeapon : Interface
 	public void Select()
 	{
 		if(BoundTo.Loaded == null)
-			BoundTo.Installed.Master.OrderLoad(this);
+		{
+	        audio.PlayOneShot(SoundFX[0]);
+			BoundTo.Installed.Master.OrderLoad(BoundTo);
+		}
 		else if(BoundTo.Amount < 1)
-			BoundTo.Installed.Master.OrderReload(this);
+		{
+	        audio.PlayOneShot(SoundFX[0]);
+			BoundTo.Installed.Master.OrderReload(BoundTo);
+		}
 		else
 		{
 			if(!Selected)
 			{
 				Selected = true;
-		        audio.PlayOneShot(SoundFX[0]);
+		        audio.PlayOneShot(SoundFX[1]);
 			}
 			else
 			{
-		        audio.PlayOneShot(SoundFX[1]);
+		        audio.PlayOneShot(SoundFX[2]);
 		        BoundTo.Selected = null;
 				Selected = false;
 			}

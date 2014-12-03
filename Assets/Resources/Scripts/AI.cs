@@ -17,7 +17,7 @@ public class AI : MonoBehaviour
 				foreach(Component component in item.Value.Components)
 				{
 					if(component.GetSystem() == "weapon")
-						component.Select(GetComponent<Mech>().Environment.Inventory[0]);//Always fire all
+						((Weapon)component).Select(GetComponent<Mech>().Environment.Inventory[0]);//Always fire all
 				}
 			}	
 		}
@@ -28,10 +28,7 @@ public class AI : MonoBehaviour
 				foreach(Component component in item.Value.Components)
 				{
 					if(component.GetSystem() == "weapon")
-					{
-						component.Selected = true;//Always fire all
 						GetComponent<Mech>().OrderLoad((Weapon)component);
-					}
 				}
 			}	
 		}

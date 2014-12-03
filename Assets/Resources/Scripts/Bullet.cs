@@ -14,6 +14,6 @@ public class Bullet : Mobile {
 
 	public void EndMove()
 	{
-		EventDestruct();
+		//EventDestruct();
 	}
 }

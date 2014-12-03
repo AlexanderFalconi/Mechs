@@ -43,6 +43,7 @@ public class CenterTorso : Part
 		BindUI(Master.Controller.PanelActions.AddAction("Charge", new ActionsArray.CanAction(CanCharge), new ActionsArray.TargetedAction(AttemptCharge)));
 		BindUI(Master.Controller.PanelActions.AddAction("Pounce", new ActionsArray.CanAction(CanPounce), new ActionsArray.TargetedAction(AttemptPounce)));
 		BindUI(Master.Controller.PanelActions.AddAction("Turn", new ActionsArray.CanAction(CanTurn), new ActionsArray.TargetedAction(AttemptTurn)));
+		BindUI(Master.Controller.PanelActions.AddAction("Eject", new ActionsArray.CanAction(CanEject), new ActionsArray.TargetedAction(AttemptEject)));
 		//Master.Controller.PanelActions.AddAction("climb", AttemptClimb);
 		base.InitActions();
 	}
@@ -171,5 +172,18 @@ public class CenterTorso : Part
 	{
 		//Entity location = PointOutLocation(what);
 		//Controlling.EventTurn(location, target);
+	}
+
+	public bool CanEject()
+	{
+		if(!IsTapped || (Master.PilotOb == null) || (Master.PilotOb.Environment.GetStatus() != Component.STATUS_OK))
+			return true;
+		else
+			return false;
+	}
+
+	public void AttemptEject(Transform what)
+	{
+		Master.PilotOb.Environment = null;
 	}
 }

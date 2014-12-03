@@ -61,4 +61,10 @@ public class ActionsArray : MonoBehaviour
     		button.UpdateUI();
     	}
     }
+
+    public void Deselect()
+    {
+        Selected.Deselect();
+        Selected = null;
+    }
 }

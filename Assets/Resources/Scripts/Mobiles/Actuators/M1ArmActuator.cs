@@ -25,7 +25,8 @@ public class M1ArmActuator : Actuator
 	{
 		if(GetStatus() == STATUS_OK)
 		{
-			Installed.Master.Rotation += GetRotation();
+			Installed.Rotation += GetRotation();
+			Installed.Accuracy += GetAccuracy();
 			Installed.Force += GetRotation();
 		}
 		base.Interval();

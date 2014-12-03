@@ -5,6 +5,7 @@ public class Part
 {
 	public const int STATUS_OK = 0;
 	public const int STATUS_DESTROY = 1;
+	public const int STATUS_SEVER = 2;
 	public string Short;
 	public Dictionary<string,int> HitTable;
 	public Dictionary<string,float> Proportion = new Dictionary<string,float>() {{"max mass", 0.0f}, {"mass", 0.0f}};
@@ -17,11 +18,16 @@ public class Part
 	public List<Interface> UI = new List<Interface>();
 	public bool IsTapped = false;
 	public int Status = STATUS_OK;
+	public float Accuracy = 0.0f;
+	public float Rotation = 0.0f;
 	public Mech Master;
 
 	public int GetStatus()
 	{
-		return Status;//OK
+		if(Parent != null && (Parent.GetStatus() != STATUS_OK))
+			return STATUS_SEVER;
+		else
+			return Status;//OK
 	}
 
 	public void Attach(Part limb, Mech who)
@@ -169,7 +175,9 @@ public class Part
 	public virtual void EventDestroyed()
 	{
 		foreach(Part limb in Children)
-			limb.EventLimbDestroyed();
+			limb.EventDestroyed();
+		if(Parent == null)//Core destroyed
+			Master.EventDestroyed();
 	}	
 
 	public virtual int GetMeleeDamage()
@@ -196,9 +204,9 @@ public class Part
 	{
 		return 0.0f;
 	}
-	public virtual float GetAccuracy()
+	public virtual int GetAccuracy()
 	{
-		return 0.0f;
+		return 0;
 	}
 
 	public virtual float[] GetFiringArc()
@@ -225,9 +233,11 @@ public class Part
     	//TEMP: Some day dynamically generate the armor tables here
     }
 
-    public void Interval()
+    public virtual void Interval()
     {
     	IsTapped = false;
+    	Accuracy = 0.0f;
+    	Rotation = 0.0f;
 		Force = 0.0f;//Reset limb attributes
 		foreach(Component component in Components)
 			component.Interval();
@@ -238,5 +248,4 @@ public class Part
         foreach(Interface iface in UI)
             iface.UpdateUI();
     }
-
 }

@@ -35,4 +35,10 @@ public class DynamicAction : Interface
 		else
 			NameLabel.fontStyle = FontStyle.Normal;
 	}
+
+	public void Deselect()
+	{
+	    Selected = false;
+	    UpdateUI();
+	}
 }

@@ -56,7 +56,7 @@ public class Leg : Part
 
 	public override void EventDestroyed()
 	{
-		Master.EventFall();
+		Master.EventFall(1);
 		base.EventDestroyed();
 	}
 }

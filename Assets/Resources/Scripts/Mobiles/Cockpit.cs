@@ -12,6 +12,7 @@ public class Cockpit : Component
 		if(PilotOb == null)
 		{//Enough room
 			PilotOb = pilot;
+			pilot.Environment = this;
 			return true;
 		}
 		else//Full
@@ -20,6 +21,7 @@ public class Cockpit : Component
 
 	public void RemovePersonell()
 	{
+		PilotOb.Environment = null;
 		PilotOb = null;
 	}
 

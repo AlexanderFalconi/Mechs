@@ -23,11 +23,9 @@ public class Mobile : Entity {
 		}
 	}
 
-	public void EventDestruct()
+	public virtual void EventDestroyed()
 	{
-	    //GameObject.Instantiate(largeExplosion, transform.position, transform.rotation);
-	    //Engine.Entities.Remove(transform);//Remove from initiative
-		Destroy(transform);
+		audio.PlayOneShot(SoundFX["destruct"]);
 	}
 
 	public void NextFace()
@@ -45,7 +43,7 @@ public class Mobile : Entity {
 	public void NextMove()
 	{
 		int step = Random.Range(0, 4);
-	    audio.PlayOneShot(SoundFX["mech move "+step]);
+	    audio.PlayOneShot(SoundFX["move "+step]);
 	    audio.loop = true;
 		moveTo.RemoveAt(0);
 		if(moveTo.Count > 0)

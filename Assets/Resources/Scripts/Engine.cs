@@ -8,6 +8,7 @@ public class Engine : MonoBehaviour
 	public const int PHASE_DEPLOY = 0;
 	public const int PHASE_ACTION = 1;
 	public const int PHASE_WEAPON = 2;
+	public const int PHASE_END = 3;
 	private static float[] Random = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
 	public List<Mech> Inventory = new List<Mech>();
 	public Dictionary<string,int> Interval = new Dictionary<string,int>() {{"turn", 0}, {"round", 0}, {"phase", 0}};//Sentinel value 1000
@@ -17,6 +18,8 @@ public class Engine : MonoBehaviour
 	public bool isReady = false;
 	public DynamicInput TurnOutput;
 	public List<Weapon> Weapons = new List<Weapon>();
+	private int delay = 0;
+	private bool IsGameOver = false;
 	// Use this for initialization
 	private void Start () 
 	{
@@ -77,41 +80,47 @@ public class Engine : MonoBehaviour
 	
 	private void Update () 
 	{
-		if(isReady && !isAnimating)
+		if(delay > 0)
 		{
-			if(Weapons.Count > 0)
+			if(isReady && !IsGameOver)
 			{
-				AttemptFire();
-				yield WaitForSeconds(3.0f));
-			}
-			else
-			{
-				if(Interval["phase"] == PHASE_ACTION)
+				if(Weapons.Count > 0)
+					AttemptFire();
+				else
 				{
-					if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
-						Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
-					if(Inventory[Interval["turn"]].isDone)
-						NextTurn();
-				}
-				else//PHASE_WEAPON or PHASE_DEPLOY
-				{
-					foreach(Mech mech in Inventory)
+					if(Interval["phase"] == PHASE_ACTION)
 					{
-						if(!mech.isDone)
-						{
-							if(mech.GetComponent<AI>() as AI != null)
-								mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
-							return;//Keep waiting
-						}
+						if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
+							Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
+						if(Inventory[Interval["turn"]].isDone)
+							NextTurn();
 					}
-					NextTurn();
+					else//PHASE_WEAPON or PHASE_DEPLOY
+					{
+						foreach(Mech mech in Inventory)
+						{
+							if(!mech.isDone)
+							{
+								if(mech.GetComponent<AI>() as AI != null)
+									mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
+								return;//Keep waiting
+							}
+						}
+						NextTurn();
+					}
 				}
 			}
+		}
+		else
+		{
+			if(delay < Time.time)
+				delay = 0;
 		}
 	}
 
 	private void NextTurn()
 	{
+
 		isReady = false;//Need to wait until the next turn is set up
 		if((Interval["turn"] >= Inventory.Count-1) || (Interval["phase"] == PHASE_DEPLOY))
 		{
@@ -121,8 +130,11 @@ public class Engine : MonoBehaviour
 					Interval["phase"]++; break;
 				case PHASE_WEAPON:
 					AttemptFire();
-					Interval["round"]++;//next round
 					Interval["turn"] = 0;//reset turns
+					Interval["phase"]++; break;
+				case PHASE_END:
+					IsGameOver = VictoryConditions();
+					Interval["round"]++;//next round
 					Interval["phase"] = PHASE_ACTION; break;
 				default://Is deployment Interval["phase"]
 					Interval["phase"] = PHASE_ACTION; break;
@@ -131,6 +143,20 @@ public class Engine : MonoBehaviour
 		else//still in action phase
 			Interval["turn"]++;
 		StartTurn();
+	}
+
+	private bool VictoryConditions()
+	{
+		if((Inventory[0].Status != Mech.STATUS_OK) || (Inventory[0].PilotOb == null))
+			return true;//Game over, player lost
+		foreach(Mech entity in Inventory)
+		{
+			if(Inventory[0] == entity)
+				continue;
+			else if((entity.Status == Mech.STATUS_OK) && (Inventory[0].PilotOb != null))
+				return false;//Game not over
+		}
+		return true;//Game over, player won
 	}
 
 	private void StartTurn()
@@ -167,8 +193,10 @@ public class Engine : MonoBehaviour
 
 	public void AttemptFire()
 	{
-		Weapon weapon = Weapons.Pop();
-		weapon.Installed.Master.AttemptFire(weapon.Loaded, weapon.Selected);
+
+		Weapon weapon = Weapons[0];
+		Weapons.RemoveAt(0);
+		weapon.Installed.Master.AttemptFire(weapon);
 		weapon.Selected = null;
 	}
 

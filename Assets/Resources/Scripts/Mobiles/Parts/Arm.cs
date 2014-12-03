@@ -10,12 +10,20 @@ public class Arm : Part
 		Melee.Add("push");
 	}
 
-	public override float GetAccuracy()
+	public override int GetAccuracy()
 	{
-		float accuracy = 0.0f;
-		//foreach(Component item in Components)
-		//	accuracy += item.GetAccuracy();
-		return Mathf.Floor(accuracy/Master.GetMass());
+
+		float mass = GetMass();
+		if(Accuracy < mass)
+			return 4;
+		else if(Accuracy < mass * 2.0f)
+			return 3;
+		else if(Accuracy < mass * 3.0f)
+			return 2;
+		else if(Accuracy < mass * 4.0f)
+			return 1;
+		else
+			return 0;
 	}
 
 	public override int GetMeleeCR()

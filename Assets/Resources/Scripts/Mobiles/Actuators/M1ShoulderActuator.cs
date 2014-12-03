@@ -25,8 +25,8 @@ public class M1ShoulderActuator : Actuator
 	{
 		if(GetStatus() == STATUS_OK)
 		{
-			Installed.Master.Locomotion += GetAccuracy();
-			Installed.Master.Rotation += GetRotation();
+			Installed.Accuracy += GetAccuracy();
+			Installed.Rotation += GetRotation();
 		}
 		base.Interval();
   	}

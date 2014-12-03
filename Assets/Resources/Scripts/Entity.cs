@@ -21,13 +21,13 @@ public class Entity : MonoBehaviour
 		return this;
 	}
 
-	public virtual void Update()
-	{
-
-	}
-
 	public virtual string GetEntityType()
 	{
 		return "entity";
+	}
+
+	public virtual void Update()
+	{
+
 	}
 }

@@ -6,6 +6,9 @@ public class Mech : Mobile {
 	public const int POSTURE_PRONE = 0;
 	public const int POSTURE_STAND = 1;
 	public const int POSTURE_JUMP = 2;
+	public const int STATUS_OK = 0;
+	public const int STATUS_DESTROY = 1;
+	public int Status = STATUS_OK;
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
 	public int Posture = POSTURE_STAND;
@@ -20,12 +23,13 @@ public class Mech : Mobile {
 		SoundFX["short motion"] = Resources.Load("Audio/FXShortMotion") as AudioClip;
 		SoundFX["long motion"] = Resources.Load("Audio/FXLongMotion") as AudioClip;
 		SoundFX["fall"] = Resources.Load("Audio/FXFall") as AudioClip;
-		SoundFX["mech move 0"] = Resources.Load("Audio/FXMechMove0") as AudioClip;
-		SoundFX["mech move 1"] = Resources.Load("Audio/FXMechMove1") as AudioClip;
-		SoundFX["mech move 2"] = Resources.Load("Audio/FXMechMove2") as AudioClip;
-		SoundFX["mech move 3"] = Resources.Load("Audio/FXMechMove3") as AudioClip;
-		SoundFX["mech move 4"] = Resources.Load("Audio/FXMechMove4") as AudioClip;
-		SoundFX["mech explosion"] = Resources.Load("Audio/FXMechExplosion") as AudioClip;
+		SoundFX["move 0"] = Resources.Load("Audio/FXMechMove0") as AudioClip;
+		SoundFX["move 1"] = Resources.Load("Audio/FXMechMove1") as AudioClip;
+		SoundFX["move 2"] = Resources.Load("Audio/FXMechMove2") as AudioClip;
+		SoundFX["move 3"] = Resources.Load("Audio/FXMechMove3") as AudioClip;
+		SoundFX["move 4"] = Resources.Load("Audio/FXMechMove4") as AudioClip;
+		SoundFX["destruct"] = Resources.Load("Audio/FXMechExplosion") as AudioClip;
+		SoundFX["reload"] = Resources.Load("Audio/FXReloadBallistic") as AudioClip;
 	}
 
 	public new Mech BindController(Player who)
@@ -119,6 +123,13 @@ public class Mech : Mobile {
 		UpdateUI();
 	}
 
+	public override void EventDestroyed()
+	{
+		Environment.EventRelease(this);
+		Status = STATUS_DESTROY;
+		base.EventDestroyed();		
+	}
+
 	public bool EventDrainEnergy(float energy)
 	{
 		if(Energy["current"]-energy < 0.0f)
@@ -171,7 +182,9 @@ public class Mech : Mobile {
 		if(Environment.Interval["phase"] <= Engine.PHASE_ACTION)//Includes Engine.PHASE_DEPLOY
 		{
 			Speed["momentum"] = Speed["moved"] = Speed["jumped"] = 0;
-			if(!PilotOb.Conscious)
+			if((PilotOb == null) || (Status != STATUS_OK))
+				isDone = true;
+			else if(!PilotOb.Conscious)
 			{//Knocked out
 				PilotOb.EventConsciousness();//Try to wake up
 				isDone = true;//Skip this turn
@@ -275,93 +288,77 @@ public class Mech : Mobile {
 		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
 	}
 
-	public List<Weapon> GetSelectedWeapons()
+	public void AttemptFire(Weapon weapon)
 	{
-		List<Weapon> weapons = new List<Weapon>();
-		foreach(KeyValuePair<string,Part> item in Body)
-		{
-			foreach(Component component in item.Value.Components)
-			{
-				if(component.GetSystem() == "weapon" && component.Selected)
-					weapons.Add((Weapon)component);
-			}
-		}	
-		return weapons;
-	}
-
-	public void AttemptFire(Entity target)
-	{
+		Debug.Log("Weapon: "+weapon);
+		int shots = weapon.RateOfFire["set"];
+		Entity target = weapon.Selected;
 		Debug.Log("Target: "+target);
-		foreach(Weapon weapon in GetSelectedWeapons())
+		if(!CanFire(weapon, target.Position))
+			return;
+		Ammunition ammo = weapon.Loaded;
+		base.EventRangedAttack((Entity)target, weapon.Loaded);		
+		Debug.Log("Yep, can fire.");
+		for(int i = 0; i < shots; i++)
 		{
-			Debug.Log("Weapon: "+weapon);
-			int shots = weapon.RateOfFire["set"];
-			if(!CanFire(weapon, target.Position))
-				return;
-			Ammunition ammo = weapon.Loaded;
-			base.EventRangedAttack((Entity)target, weapon.Loaded);		
-			Debug.Log("Yep, can fire.");
-			for(int i = 0; i < shots; i++)
+			if(weapon.EventDischarge())
 			{
-				if(weapon.EventDischarge())
-				{
-					float result;
-					Debug.Log(target.Position);
-					List<Vector3> steps = GetDirectSteps(Position, target.Position);
-					Dictionary<string,int[]> scan = new Dictionary<string,int[]>() {{"x", new int[] {0, 0} },{"y", new int[] {0, 0} },{"z", new int[] {0, 0} }};
-					Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
-					foreach(Vector3 step in steps)
-					{//For each step in the path
-						//Debug.Log("STEP: "+step);
-						scan["x"][0] = Mathf.FloorToInt(step.x);
-						scan["x"][1] = Mathf.CeilToInt(step.x);
-						partial["x"][1] = step.x%1.0f;
-						partial["x"][0] = 1.0f - partial["x"][1];
-						scan["y"][0] = Mathf.FloorToInt(step.y);
-						scan["y"][1] = Mathf.CeilToInt(step.y);
-						partial["y"][1] = step.y%1.0f;
-						partial["y"][0] = 1.0f - partial["y"][1];
-						scan["z"][0] = Mathf.FloorToInt(step.z);
-						scan["z"][1] = Mathf.CeilToInt(step.z);
-						partial["z"][1] = step.z%1.0f;
-						partial["z"][0] = 1.0f - partial["z"][1];
-						result = Random.Range(0.01f, 1.00f);
-						//Debug.Log("Core Result: "+result);
-						for(int y = 0; y <= 1; y++)
-						{//Foreach possible tile that could be hit, get a random chance and assign to the tile
-							for(int z = 0; z <= 1; z++)
+				float result;
+				Debug.Log(target.Position);
+				List<Vector3> steps = GetDirectSteps(Position, target.Position);
+				Dictionary<string,int[]> scan = new Dictionary<string,int[]>() {{"x", new int[] {0, 0} },{"y", new int[] {0, 0} },{"z", new int[] {0, 0} }};
+				Dictionary<string,float[]> partial = new Dictionary<string,float[]>() {{"x", new float[] {0.0f, 0.0f}},{"y", new float[] {0.0f, 0.0f}},{"z", new float[] {0.0f, 0.0f}}};
+				foreach(Vector3 step in steps)
+				{//For each step in the path
+					//Debug.Log("STEP: "+step);
+					scan["x"][0] = Mathf.FloorToInt(step.x);
+					scan["x"][1] = Mathf.CeilToInt(step.x);
+					partial["x"][1] = step.x%1.0f;
+					partial["x"][0] = 1.0f - partial["x"][1];
+					scan["y"][0] = Mathf.FloorToInt(step.y);
+					scan["y"][1] = Mathf.CeilToInt(step.y);
+					partial["y"][1] = step.y%1.0f;
+					partial["y"][0] = 1.0f - partial["y"][1];
+					scan["z"][0] = Mathf.FloorToInt(step.z);
+					scan["z"][1] = Mathf.CeilToInt(step.z);
+					partial["z"][1] = step.z%1.0f;
+					partial["z"][0] = 1.0f - partial["z"][1];
+					result = Random.Range(0.01f, 1.00f);
+					//Debug.Log("Core Result: "+result);
+					for(int y = 0; y <= 1; y++)
+					{//Foreach possible tile that could be hit, get a random chance and assign to the tile
+						for(int z = 0; z <= 1; z++)
+						{
+							for(int x = 0; x <= 1; x++)
 							{
-								for(int x = 0; x <= 1; x++)
-								{
-									//Debug.Log(scan["x"][x]+", "+scan["y"][y]+", "+scan["z"][z]);
-									//Debug.Log(partial["x"][x]+", "+partial["y"][y]+", "+partial["z"][z]);
-									//Debug.Log(partial["x"][x]*partial["y"][y]*partial["z"][z]);
-									result -= partial["x"][x]*partial["y"][y]*partial["z"][z];
-									//Debug.Log("Result: "+result);
-									if(result <= 0)
-									{//Found the tile to hit, see if an entity is there
-										//Debug.Log("Try to hit...");
-										if(Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]].Count > 0)//An entity is here
-										{
-											//Debug.Log("An entity is here...");
-											Entity potential = Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]][0];//Takes the first element of the list for now
-											if(potential == target)
-												EventRangedAttack((Mech)target, ammo);//Try to hit intended target
-											else
-												EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
-										}//Else, no entity is here
-										x = y = z = 2;//Force a break out of these 3 loops; move on to next step
-									}
+								//Debug.Log(scan["x"][x]+", "+scan["y"][y]+", "+scan["z"][z]);
+								//Debug.Log(partial["x"][x]+", "+partial["y"][y]+", "+partial["z"][z]);
+								//Debug.Log(partial["x"][x]*partial["y"][y]*partial["z"][z]);
+								result -= partial["x"][x]*partial["y"][y]*partial["z"][z];
+								//Debug.Log("Result: "+result);
+								if(result <= 0)
+								{//Found the tile to hit, see if an entity is there
+									//Debug.Log("Try to hit...");
+									if(Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]].Count > 0)//An entity is here
+									{
+										//Debug.Log("An entity is here...");
+										Entity potential = Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]][0];//Takes the first element of the list for now
+										if(potential == target)
+											EventRangedAttack((Mech)target, ammo);//Try to hit intended target
+										else
+											EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
+									}//Else, no entity is here
+									x = y = z = 2;//Force a break out of these 3 loops; move on to next step
 								}
 							}
 						}
-						if(ammo.Damage["remaining"] < 1)
-							break;//This round is spent, try next round
 					}
+					if(ammo.Damage["remaining"] < 1)
+						break;//This round is spent, try next round
 				}
-				else
-					break;//Out of rounds
 			}
+			else
+				break;//Out of rounds
 		}
 	}
 

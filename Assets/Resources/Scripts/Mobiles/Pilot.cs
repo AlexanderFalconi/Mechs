@@ -5,6 +5,7 @@ public class Pilot {
 	public string Name;
 	public int HP, Piloting, Gunnery;
 	public bool Conscious = true;
+	public Cockpit Environment;
 
 	public Pilot (string name, int piloting, int gunnery) 
 	{

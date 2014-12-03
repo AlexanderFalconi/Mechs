@@ -3,15 +3,14 @@ using System.Collections.Generic;
 
 public class Component 
 {
-    public const STATUS_OK = 0;
-    public const STATUS_STUN = 1;
-    public const STATUS_DAMAGE = 2;
-    public const STATUS_DESTROY = 3;
+    public const int STATUS_OK = 0;
+    public const int STATUS_STUN = 1;
+    public const int STATUS_DAMAGE = 2;
+    public const int STATUS_DESTROY = 3;
     private float Mass;
     public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public Dictionary<string,float> Energy = new Dictionary<string,float>();
     public Part Installed;
-    public bool Selected = false;
     public string Short, Long;
     public List<Interface> UI = new List<Interface>();
 
@@ -65,7 +64,7 @@ public class Component
 
     public int GetStatus()
     {
-        if(Installed.GetStatus())
+        if(Installed.GetStatus() != Part.STATUS_OK)
             return STATUS_DESTROY;
         else
             return Status;
@@ -73,7 +72,7 @@ public class Component
 
     public string GetStatusLong()
     {
-        if(Installed.GetStatus())
+        if(Installed.GetStatus() != Part.STATUS_OK)
             return "Lost";
         switch(Status)
         {
