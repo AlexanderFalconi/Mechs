@@ -16,7 +16,8 @@ public class Gyro : Component {
 
 	public override void Interval()
 	{
-		Installed.Master.Stabilization += Stabilization;
+		if(GetStatus() == STATUS_OK)
+			Installed.Master.Stabilization += Stabilization;
 		base.Interval();
   	}
 }

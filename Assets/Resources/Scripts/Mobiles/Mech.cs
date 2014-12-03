@@ -17,7 +17,15 @@ public class Mech : Mobile {
 
 	public Mech()
 	{
-
+		SoundFX["short motion"] = Resources.Load("Audio/FXShortMotion") as AudioClip;
+		SoundFX["long motion"] = Resources.Load("Audio/FXLongMotion") as AudioClip;
+		SoundFX["fall"] = Resources.Load("Audio/FXFall") as AudioClip;
+		SoundFX["mech move 0"] = Resources.Load("Audio/FXMechMove0") as AudioClip;
+		SoundFX["mech move 1"] = Resources.Load("Audio/FXMechMove1") as AudioClip;
+		SoundFX["mech move 2"] = Resources.Load("Audio/FXMechMove2") as AudioClip;
+		SoundFX["mech move 3"] = Resources.Load("Audio/FXMechMove3") as AudioClip;
+		SoundFX["mech move 4"] = Resources.Load("Audio/FXMechMove4") as AudioClip;
+		SoundFX["mech explosion"] = Resources.Load("Audio/FXMechExplosion") as AudioClip;
 	}
 
 	public new Mech BindController(Player who)
@@ -49,6 +57,7 @@ public class Mech : Mobile {
 		{
 			if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
 			{
+	   			audio.PlayOneShot(SoundFX["short motion"]);
 				Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
 				Controller.PanelActions.transform.parent.gameObject.SetActive(true);
 			}
@@ -290,6 +299,7 @@ public class Mech : Mobile {
 			if(!CanFire(weapon, target.Position))
 				return;
 			Ammunition ammo = weapon.Loaded;
+			base.EventRangedAttack((Entity)target, weapon.Loaded);		
 			Debug.Log("Yep, can fire.");
 			for(int i = 0; i < shots; i++)
 			{
@@ -348,7 +358,6 @@ public class Mech : Mobile {
 						if(ammo.Damage["remaining"] < 1)
 							break;//This round is spent, try next round
 					}
-					//base.OrderFire(target, SelectedWeapon.Loaded); GENERATE THE ANIMATION				
 				}
 				else
 					break;//Out of rounds
@@ -439,6 +448,15 @@ public class Mech : Mobile {
     also do accidental charge
     also do ram
     for charge need 1 extra hex past target
+    also do reverse move
+    also do turning
+    also do on a charge miss; fall or both balance penalties go to you
+    also pilot check per 5%tonnage damage taken.
+    on pounce based on jump hex hit
+    ratio of balance locomotion for how high you can go
+    add sensors
+    add electro reactive armor
+    add guerilla-tek chameleon plating
 	*/
 	public void EventCharge(Vector3 pos, Entity target)
 	{

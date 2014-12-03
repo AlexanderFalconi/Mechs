@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Bushwacker : Mech 
 {
-	public Bushwacker()
+	public Bushwacker() : base()
 	{
 		Body["center torso"].Attach(this);
 		Body["left torso"].Attach(Body["center torso"], this);//Connect limb

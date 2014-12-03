@@ -16,5 +16,6 @@ public class MediumLaser : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 120;
 		Range = 2;
+		SoundFX = "Audio/FXLargeLaser";
 	}
 }

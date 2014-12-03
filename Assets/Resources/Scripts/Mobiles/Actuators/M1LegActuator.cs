@@ -23,8 +23,11 @@ public class M1LegActuator : Actuator
 
 	public override void Interval()
 	{
-		Installed.Master.Locomotion += GetLocomotion();
-		Installed.Force += GetLocomotion();
+		if(GetStatus() == STATUS_OK)
+		{
+			Installed.Master.Locomotion += GetLocomotion();
+			Installed.Force += GetLocomotion();
+		}
 		base.Interval();
   	}
 }

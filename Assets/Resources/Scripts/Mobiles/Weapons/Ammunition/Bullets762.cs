@@ -17,5 +17,6 @@ public class Bullets762 : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 3;
 		Range = 6;
+		SoundFX = "Audio/FXMediumMachineGun";
 	}
 }

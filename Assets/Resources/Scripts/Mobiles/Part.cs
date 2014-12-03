@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class Part 
 {
+	public const int STATUS_OK = 0;
+	public const int STATUS_DESTROY = 1;
 	public string Short;
 	public Dictionary<string,int> HitTable;
 	public Dictionary<string,float> Proportion = new Dictionary<string,float>() {{"max mass", 0.0f}, {"mass", 0.0f}};
@@ -14,7 +16,13 @@ public class Part
 	public List<Part> Children = new List<Part>();
 	public List<Interface> UI = new List<Interface>();
 	public bool IsTapped = false;
+	public int Status = STATUS_OK;
 	public Mech Master;
+
+	public int GetStatus()
+	{
+		return Status;//OK
+	}
 
 	public void Attach(Part limb, Mech who)
 	{
@@ -125,6 +133,8 @@ public class Part
 		Debug.Log("Inflicted: "+inflicted);
 		if(crit > 0)
 			EventCritical(crit);//Check for crits last because of possible ammo explosions
+		if(Armors["internal"].HP < 1)
+			EventDestroyed();//Destroyed
 		return inflicted;
 	}
 
@@ -154,6 +164,12 @@ public class Part
 		}
 		foreach(KeyValuePair<Component,int> specific in crits)
 			specific.Key.EventDamage(specific.Value);
+	}
+
+	public virtual void EventDestroyed()
+	{
+		foreach(Part limb in Children)
+			limb.EventLimbDestroyed();
 	}	
 
 	public virtual int GetMeleeDamage()

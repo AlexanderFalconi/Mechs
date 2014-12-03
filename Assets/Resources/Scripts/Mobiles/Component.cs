@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 public class Component 
 {
+    public const STATUS_OK = 0;
+    public const STATUS_STUN = 1;
+    public const STATUS_DAMAGE = 2;
+    public const STATUS_DESTROY = 3;
     private float Mass;
     public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public Dictionary<string,float> Energy = new Dictionary<string,float>();
@@ -59,15 +63,25 @@ public class Component
         return false;//Doesn't hold personell
     }
 
+    public int GetStatus()
+    {
+        if(Installed.GetStatus())
+            return STATUS_DESTROY;
+        else
+            return Status;
+    }
+
     public string GetStatusLong()
     {
+        if(Installed.GetStatus())
+            return "Lost";
         switch(Status)
         {
-            case 0:
+            case Component.STATUS_OK:
                 return "OK";
-            case 1:
+            case Component.STATUS_STUN:
                 return "Stunned";
-            case 2: 
+            case Component.STATUS_DAMAGE: 
                 return "Damaged";
             default: 
                 return "Destroyed";

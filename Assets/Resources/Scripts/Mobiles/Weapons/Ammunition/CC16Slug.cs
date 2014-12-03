@@ -16,5 +16,6 @@ public class CC16Slug : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 320;
 		Range = 12;
+		SoundFX = "Audio/FXLargeShell";
 	}
 }

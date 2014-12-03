@@ -23,8 +23,11 @@ public class M1ArmActuator : Actuator
 
 	public override void Interval()
 	{
-		Installed.Master.Rotation += GetRotation();
-		Installed.Force += GetRotation();
+		if(GetStatus() == STATUS_OK)
+		{
+			Installed.Master.Rotation += GetRotation();
+			Installed.Force += GetRotation();
+		}
 		base.Interval();
   	}
 }

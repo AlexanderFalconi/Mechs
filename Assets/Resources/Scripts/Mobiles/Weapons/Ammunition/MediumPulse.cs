@@ -16,5 +16,6 @@ public class MediumPulse : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 40;
 		Range = 6;
+		SoundFX = "Audio/FXPulseLaser";
 	}
 }

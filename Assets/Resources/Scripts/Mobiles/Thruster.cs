@@ -16,7 +16,8 @@ public class Thruster : Component {
 
 	public override void Interval()
 	{
-		Installed.Master.Thrust += Thrust;
+		if(GetStatus() == STATUS_OK)
+			Installed.Master.Thrust += Thrust;
 		base.Interval();
   	}
 }

@@ -16,5 +16,6 @@ public class HeavyPulse : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 60;
 		Range = 9;
+		SoundFX = "Audio/FXPulseLaser";
 	}
 }

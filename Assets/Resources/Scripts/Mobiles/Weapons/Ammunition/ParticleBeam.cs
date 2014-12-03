@@ -16,5 +16,6 @@ public class ParticleBeam : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 240;
 		Range = 4;
+		SoundFX = "Audio/FXPulseLaser";
 	}
 }

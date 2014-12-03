@@ -37,4 +37,20 @@ public class DynamicWeapon : Interface
 			AmmoOutput.text = "Ammo: "+BoundTo.GetAmmoReport();
 		RateOutput.text = "Rate: "+BoundTo.RateOfFire["set"];
 	}
+
+	public void Select()
+	{
+		if(Loaded == null)
+			Installed.Master.OrderLoad(this);
+		else if(Amount < 1)
+			Installed.Master.OrderReload(this);
+		else
+		{
+			if(Selected)
+				Selected = false;
+			else
+				Selected = true;	
+		}
+		UpdateUI();
+	}
 }

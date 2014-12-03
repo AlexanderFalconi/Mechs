@@ -53,4 +53,10 @@ public class Leg : Part
 		}
 		//else invalid target or out of range
 	}
+
+	public override void EventDestroyed()
+	{
+		Master.EventFall();
+		base.EventDestroyed();
+	}
 }

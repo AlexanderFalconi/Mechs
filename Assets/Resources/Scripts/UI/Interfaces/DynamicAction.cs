@@ -10,10 +10,20 @@ public class DynamicAction : Interface
     public ActionsArray.CanAction CanAction;
     public ActionsArray.SimpleAction SimpleAction;
     public ActionsArray.TargetedAction TargetedAction;
+    public AudioClip[] SoundFX = new AudioClip[2];
 
 	public void Select()
 	{
-		transform.parent.GetComponent<ActionsArray>().Select(this);
+		if(!Selected)
+		{
+	        audio.PlayOneShot(SoundFX[0]);
+	        transform.parent.GetComponent<ActionsArray>().Select(this);
+		}
+		else
+		{
+	        audio.PlayOneShot(SoundFX[1]);
+	        transform.parent.GetComponent<ActionsArray>().Deselect();
+		}
 	}
 
 	public override void UpdateUI()

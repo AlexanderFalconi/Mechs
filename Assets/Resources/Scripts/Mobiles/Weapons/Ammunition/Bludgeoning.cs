@@ -8,5 +8,6 @@ public class Bludgeoning : Ammunition
 		DamageType = "impact";
 		Damage["max"] = damage;
 		Range = 1;
+		SoundFX = "Audio/FXMeleeImpact";
 	}
 }

@@ -16,5 +16,6 @@ public class LightPulse : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 20;
 		Range = 3;
+		SoundFX = "Audio/FXPulseLaser";
 	}
 }

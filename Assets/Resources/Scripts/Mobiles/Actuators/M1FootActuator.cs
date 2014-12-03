@@ -23,8 +23,11 @@ public class M1FootActuator : Actuator
 
 	public override void Interval()
 	{
-		Installed.Master.Mobility += GetMobility();
-		Installed.Master.Balance += GetBalance();
+		if(GetStatus() == STATUS_OK)
+		{
+			Installed.Master.Mobility += GetMobility();
+			Installed.Master.Balance += GetBalance();
+		}
 		base.Interval();
   	}
 }

@@ -8,6 +8,7 @@ public class Mobile : Entity {
 	public bool isDone = false;
 	public bool isReady = true;
 	public float rate = 2.0f;
+    public Dictionary<string,AudioClip> SoundFX = new Dictionary<string,AudioClip>();
 
 	public override void Update () 
 	{
@@ -31,6 +32,7 @@ public class Mobile : Entity {
 
 	public void NextFace()
 	{
+	    //audio.PlayOneShot(SoundFX["short motion"]);
 		moveDir = moveTo[0] - transform.position;
 		moveDir.y =0;
         Vector3 dir = Vector3.Cross(faceDir, moveDir);
@@ -42,6 +44,9 @@ public class Mobile : Entity {
 
 	public void NextMove()
 	{
+		int step = Random.Range(0, 4);
+	    audio.PlayOneShot(SoundFX["mech move "+step]);
+	    audio.loop = true;
 		moveTo.RemoveAt(0);
 		if(moveTo.Count > 0)
 			NextFace();
@@ -49,27 +54,36 @@ public class Mobile : Entity {
 			isReady = true;
 	}
 
-	public void OrderFire(GameObject target, Ammunition bullet)//TEMP: later call it EventFire
+	public virtual void EventRangedAttack(Entity target, Ammunition bullet)
 	{
-		Transform clone = (Transform)GameObject.Instantiate(Resources.Load(bullet.PrefabID), transform.position, transform.rotation); 
-		Debug.Log(target.transform.position);
-		//clone.gameObject.GetComponent<Mobile>().moveTo = target.transform.position;
+		SoundFX["ranged attack"] = Resources.Load(bullet.SoundFX) as AudioClip;
+		audio.PlayOneShot(SoundFX["ranged attack"]);
+	}
+
+	public virtual void EventDamage(Entity attacker, Ammunition bullet)
+	{
+		SoundFX["ranged attack"] = Resources.Load(bullet.SoundFX) as AudioClip;
+		audio.PlayOneShot(SoundFX["ranged attack"]);
 	}
 
 	public virtual void EventStand()
 	{
+	    audio.PlayOneShot(SoundFX["long motion"]);
 		transform.Rotate(0, 0, -90);
 		transform.position += new Vector3(0.0f, 0.5f, 0.0f);
 	}
 
+
 	public virtual void EventProne()
 	{
+	    audio.PlayOneShot(SoundFX["long motion"]);
 		transform.Rotate(0, 0, 90);
 		transform.position += new Vector3(0.0f, -0.5f, 0.0f);
 	}
 
 	public virtual void EventFall(int height)
 	{
+	    audio.PlayOneShot(SoundFX["fall"]);
 		transform.Rotate(0, 0, 90);
 		transform.position += new Vector3(0.0f, -0.5f, 0.0f);
 	}

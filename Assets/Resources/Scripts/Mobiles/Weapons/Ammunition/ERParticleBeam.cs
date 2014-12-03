@@ -16,5 +16,6 @@ public class ERParticleBeam : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 240;
 		Range = 6;
+		SoundFX = "Audio/FXPPC";
 	}
 }

@@ -23,9 +23,12 @@ public class M1HipActuator : Actuator
 
 	public override void Interval()
 	{
-		Installed.Master.Balance += GetBalance();
-		Installed.Master.Mobility += GetMobility();
-		Installed.Force += GetMobility();
+		if(GetStatus() == STATUS_OK)
+		{
+			Installed.Master.Balance += GetBalance();
+			Installed.Master.Mobility += GetMobility();
+			Installed.Force += GetMobility();
+		}
 		base.Interval();
   	}
 }

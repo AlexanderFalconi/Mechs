@@ -99,14 +99,12 @@ public class Weapon : Component
 
 	public override void Interval()
 	{
-		if(Reload["waiting"] > 0)
-        	Reload["waiting"]--;//Tick through reload delay
+
+		if(GetStatus() == STATUS_OK)
+		{
+			if(Reload["waiting"] > 0)
+	        	Reload["waiting"]--;//Tick through reload delay
+		}
         base.Interval();
   	}
-
-	/* AUTOLOADING
-	if(!Installed.Master.OrderLoad(weapon))
-		return false;
-	if(!Installed.Master.OrderReload(weapon))
-		return false; */
 }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Ammunition : Component 
 {
     public List<string> Ammo;
-	public string PrefabID;
+	public string PrefabID, SoundFX;
 	public float Combustibility;
 	public int Amount;
     public int Bundle;

@@ -26,8 +26,13 @@ public class Reactor : Component
 
 	public override void Interval()
 	{
-		float efficiency = 1.0f - (float)Status;
-		Installed.Master.AddEnergy(Power * efficiency);
+		if(GetStatus() == STATUS_OK)
+		{
+			float efficiency = 1.0f - (float)GetStatus();
+			if(efficiency < 0.0f)
+				efficiency = 0.0f;
+			Installed.Master.AddEnergy(Power * efficiency);
+		}
 		//Reactors do not recover from stun, base.Interval call is skipped.
 		UpdateUI();//Need to update here because base.Interval call is skipped.
   	}

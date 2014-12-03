@@ -23,8 +23,11 @@ public class M1ShoulderActuator : Actuator
 
 	public override void Interval()
 	{
-		Installed.Master.Locomotion += GetAccuracy();
-		Installed.Master.Rotation += GetRotation();
+		if(GetStatus() == STATUS_OK)
+		{
+			Installed.Master.Locomotion += GetAccuracy();
+			Installed.Master.Rotation += GetRotation();
+		}
 		base.Interval();
   	}
 }

@@ -17,5 +17,6 @@ public class Cal50Bullet : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 7;
 		Range = 10;
+		SoundFX = "Audio/FXHeavyMachineGun";
 	}
 }

@@ -16,5 +16,6 @@ public class CC8Slug : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 160;
 		Range = 24;
+		SoundFX = "Audio/FXSmallShell";
 	}
 }

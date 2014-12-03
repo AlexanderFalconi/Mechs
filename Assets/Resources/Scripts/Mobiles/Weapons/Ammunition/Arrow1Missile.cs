@@ -16,5 +16,6 @@ public class Arrow1Missile : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 20;
 		Range = 24;
+		SoundFX = "Audio/FXMissile";
 	}
 }

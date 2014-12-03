@@ -16,5 +16,6 @@ public class SmallLaser : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 60;
 		Range = 1;
+		SoundFX = "Audio/FXLargeLaser";
 	}
 }

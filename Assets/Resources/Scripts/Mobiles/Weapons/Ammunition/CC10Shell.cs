@@ -17,5 +17,6 @@ public class CC10Shell : Ammunition
 		DamageType = "ballistic";
 		Damage["max"] = 200;
 		Range = 6;
+		SoundFX = "Audio/FXSmallShell";
 	}
 }
