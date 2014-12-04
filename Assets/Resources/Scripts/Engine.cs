@@ -18,8 +18,9 @@ public class Engine : MonoBehaviour
 	public bool isReady = false;
 	public DynamicInput TurnOutput;
 	public List<Weapon> Weapons = new List<Weapon>();
-	private int delay = 0;
+	private float delay = 0.0f;
 	private bool IsGameOver = false;
+
 	// Use this for initialization
 	private void Start () 
 	{
@@ -80,14 +81,18 @@ public class Engine : MonoBehaviour
 	
 	private void Update () 
 	{
-		if(delay > 0)
+		if(delay <= 0)
 		{
 			if(isReady && !IsGameOver)
 			{
 				if(Weapons.Count > 0)
+				{
+					Inventory[0].Controller.ActivateCamera(1);
 					AttemptFire();
+				}
 				else
 				{
+					Inventory[0].Controller.ActivateCamera(0);
 					if(Interval["phase"] == PHASE_ACTION)
 					{
 						if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
@@ -129,7 +134,6 @@ public class Engine : MonoBehaviour
 				case PHASE_ACTION:
 					Interval["phase"]++; break;
 				case PHASE_WEAPON:
-					AttemptFire();
 					Interval["turn"] = 0;//reset turns
 					Interval["phase"]++; break;
 				case PHASE_END:
@@ -193,11 +197,14 @@ public class Engine : MonoBehaviour
 
 	public void AttemptFire()
 	{
-
 		Weapon weapon = Weapons[0];
+		GameObject shotcam = GameObject.Find("ViewFirstPerson");
+		shotcam.transform.position = weapon.Installed.Master.transform.position;
+		shotcam.transform.LookAt(weapon.Selected.transform);
 		Weapons.RemoveAt(0);
 		weapon.Installed.Master.AttemptFire(weapon);
 		weapon.Selected = null;
+		delay = Time.time+1.5f;
 	}
 
 	public void EventMove(Entity entity, Vector3 to)

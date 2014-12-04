@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
 	public ActionsArray PanelActions;
 	public Mech Controlling;
 	public bool androidFire = false;
+	public Camera[] Cameras = new Camera[2];
 
 	private void Setup()
 	{
@@ -23,9 +24,20 @@ public class Player : MonoBehaviour
 		PanelActions.transform.parent.gameObject.SetActive(true);
 	}
 
+	public void ActivateCamera(int cam)
+	{
+		for(int i = 0; i < Cameras.Length; i++)
+		{
+			if(i == cam)
+				Cameras[i].enabled = true;
+			else
+				Cameras[i].enabled = false;
+		}
+	}
+
 	private void Update () 
 	{
-		if((Controlling == null) || !Controlling.isReady || (Camera.main.GetComponent<InteractiveCamera>().touched != ""))
+		if((Controlling == null) || !Controlling.isReady)// || (Cameras[i].GetComponent<InteractiveCamera>().touched != ""))
 			return;//No control has been bound
 		else
 		{//Found control

@@ -61,7 +61,6 @@ public class Mech : Mobile {
 		{
 			if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
 			{
-	   			audio.PlayOneShot(SoundFX["short motion"]);
 				Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
 				Controller.PanelActions.transform.parent.gameObject.SetActive(true);
 			}

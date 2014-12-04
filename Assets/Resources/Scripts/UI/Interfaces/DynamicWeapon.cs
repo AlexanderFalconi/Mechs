@@ -16,7 +16,7 @@ public class DynamicWeapon : Interface
 	{
 		Color statusColor;
 		NameLabel.text = BoundTo.GetShort();
-		if(BoundTo.Selected)
+		if(Selected)
 			NameLabel.fontStyle = FontStyle.Bold;
 		else
 			NameLabel.fontStyle = FontStyle.Normal;

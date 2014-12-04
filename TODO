@@ -1,5 +1,4 @@
 YVETTE SITE
-MINITASK
 
 turn costs
 
@@ -20,14 +19,18 @@ collisions/pounce
 FINE TUNING FOR ANDROID
 download like 3 songs and phase through them
 
+=======================
 start on first motion
 1. homework packets
 a. an order to show cause 20 days in jail
 b. an order clarifying
 
-2. debtors exam
-explain the shirt stealing
-
 3. order regarding recording us and pictures
 
 4. writ of execution (separate)
+
+
+Minor stuff:
+change engine to environment
+namespaces for teh constants
+dont do manual .Find for camera in engine
