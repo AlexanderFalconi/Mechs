@@ -13,7 +13,7 @@ public class ParticleBeam : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 240;
 		Range = 4;
 		SoundFX = "Audio/FXPulseLaser";

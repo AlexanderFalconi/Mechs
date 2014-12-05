@@ -10,7 +10,7 @@ public class DynamicWeapon : Interface
 	public Text RateOutput;
     public Weapon BoundTo;
     public bool Selected = false;
-    public AudioClip[] SoundFX = new AudioClip[3];
+    public AudioClip[] SoundFX = new AudioClip[4];
 
 	public override void UpdateUI()
 	{
@@ -37,7 +37,10 @@ public class DynamicWeapon : Interface
 			AmmoOutput.text = "Reloading ("+BoundTo.Reload["waiting"]+")";
 		else
 			AmmoOutput.text = "Ammo: "+BoundTo.GetAmmoReport();
-		RateOutput.text = "Rate: "+BoundTo.RateOfFire["set"];
+		if(BoundTo.Selected != null)
+			RateOutput.text = "Target: "+BoundTo.Selected.Short;
+		else
+			RateOutput.text = "Rate: "+BoundTo.RateOfFire["set"];
 	}
 
 	public void Select()
@@ -49,20 +52,24 @@ public class DynamicWeapon : Interface
 		}
 		else if(BoundTo.Amount < 1)
 		{
-	        audio.PlayOneShot(SoundFX[0]);
+			if(BoundTo.Loaded.DamageType != "energy")
+	        	audio.PlayOneShot(SoundFX[0]);
+	        else
+	        	audio.PlayOneShot(SoundFX[1]);
 			BoundTo.Installed.Master.OrderReload(BoundTo);
 		}
+		else if(BoundTo.Reload["waiting"] > 0)
+			audio.PlayOneShot(SoundFX[2]);
 		else
 		{
 			if(!Selected)
 			{
 				Selected = true;
-		        audio.PlayOneShot(SoundFX[1]);
+		        audio.PlayOneShot(SoundFX[3]);
 			}
 			else
 			{
-		        audio.PlayOneShot(SoundFX[2]);
-		        BoundTo.Selected = null;
+		        audio.PlayOneShot(SoundFX[4]);
 				Selected = false;
 			}
 		}

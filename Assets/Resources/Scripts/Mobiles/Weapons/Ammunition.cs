@@ -33,10 +33,15 @@ public class Ammunition : Component
 
     public override int EventReloading(int max)
     {
-        if(Amount < max)//Not enough
-            max = Amount;//Take all
-        Amount -= max;//Take requested
-        return max;
+        if(DamageType == "energy")
+            return max;//Energy weapons are infinite
+        else
+        {
+            if(Amount < max)//Not enough
+                max = Amount;//Take all
+            Amount -= max;//Take requested
+            return max;
+        }
     }
 
     public override string GetShort()

@@ -1,25 +1,23 @@
-YVETTE SITE
-
-turn costs
-
-Camera controls
-Showing the action of what is happening. SPECIAL CAMERAS WITH UNIQUE UIs?
-
-fine tune all tilesDo terrain, random plus costs
-fine tune all models
-
-AI MOVES
-AI reloads
-===================================================================
-TODO THURSDAY
-First Person Slow Motion Camera
-jumping
-collisions/pounce
-
-FINE TUNING FOR ANDROID
-download like 3 songs and phase through them
+TODO at school>>>>>>>>>>start testing through>>>>>>>>>>>>>>
+test pilot death (after camera phase 2)
+test AI ejection (after camera phase 2)
+test end game by ejecting (after camera phase 2)
+test end game by death (after camera phase 2)
+test end game by victory (after camera phase 2)
+why wont enemy lasers fire
+why wont camera angle right
+show smoke on targets that are damaged (after camera phase 1)
+get laser beams to render
 
 =======================
+YVETTE SITE
+=======================
+fine tune all models
+First Person Slow Motion Camera
+collisions/pounce
+turn costs
+jumping
+
 start on first motion
 1. homework packets
 a. an order to show cause 20 days in jail

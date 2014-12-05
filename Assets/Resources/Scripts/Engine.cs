@@ -20,6 +20,7 @@ public class Engine : MonoBehaviour
 	public List<Weapon> Weapons = new List<Weapon>();
 	private float delay = 0.0f;
 	private bool IsGameOver = false;
+	public Report ReportUI;
 
 	// Use this for initialization
 	private void Start () 
@@ -43,22 +44,24 @@ public class Engine : MonoBehaviour
 	    }
 		mech = ((Transform)GameObject.Instantiate(hellfyre)).GetComponent<Mech>();//Add mech
 	    GameObject.FindWithTag("Player").GetComponent<Player>().BindControl(mech);
-		EventReceive(mech, new Vector3(3.0f, 1.0f, 10.0f), new Vector3(1.0f, 0.0f, 0.0f));
-		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Alex", 3, 5));
+		EventReceive(mech, new Vector3(7.0f, 1.0f, 13.0f), new Vector3(1.0f, 0.0f, 0.0f));
+		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Player 1", 3, 5));
 	    boundingBoxOb = (Transform)GameObject.Instantiate(boundingBox, mech.transform.position, Quaternion.identity);//Initialize bounding box object
 	    boundingBoxOb.parent = mech.transform;//attach bounding box to mech
 		mech = ((Transform)GameObject.Instantiate(bushwacker)).GetComponent<Mech>();//Add mech
 		EventReceive(mech, new Vector3(20.0f, 1.0f, 15.0f), new Vector3(-1.0f, 0.0f, 0.0f));
-		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Mark", 3, 5));
+		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Mark AI", 3, 5));
 		mech.gameObject.AddComponent<AI>();
 		mech = ((Transform)GameObject.Instantiate(bushwacker)).GetComponent<Mech>();//Add mech
 		EventReceive(mech, new Vector3(18.0f, 1.0f, 13.0f), new Vector3(-1.0f, 0.0f, 0.0f));
-		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Frank", 4, 4));
+		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Frank AI", 4, 4));
 		mech.gameObject.AddComponent<AI>();
+		/*
 		mech = ((Transform)GameObject.Instantiate(bushwacker)).GetComponent<Mech>();//Add mech
 		EventReceive(mech, new Vector3(16.0f, 1.0f, 14.0f), new Vector3(-1.0f, 0.0f, 0.0f));
 		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Eric", 5, 3));
 		mech.gameObject.AddComponent<AI>();
+		*/
 		Interval["phase"] = PHASE_DEPLOY;
 		StartTurn();//starts game
 	}
@@ -78,6 +81,14 @@ public class Engine : MonoBehaviour
 	    Inventory.Remove(entity);//remove mech from inventory list
 	    entity.Environment = null;		
 	}
+
+	public bool IsReady()
+	{
+		if(!isReady || (delay != 0))
+			return false;
+		else
+			return true;
+	}
 	
 	private void Update () 
 	{
@@ -85,34 +96,36 @@ public class Engine : MonoBehaviour
 		{
 			if(isReady && !IsGameOver)
 			{
-				if(Weapons.Count > 0)
+				Inventory[0].Controller.ActivateCamera(0);
+				if(Interval["phase"] == PHASE_ACTION)
 				{
-					Inventory[0].Controller.ActivateCamera(1);
-					AttemptFire();
-				}
-				else
-				{
-					Inventory[0].Controller.ActivateCamera(0);
-					if(Interval["phase"] == PHASE_ACTION)
-					{
-						if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
-							Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
-						if(Inventory[Interval["turn"]].isDone)
-							NextTurn();
-					}
-					else//PHASE_WEAPON or PHASE_DEPLOY
-					{
-						foreach(Mech mech in Inventory)
-						{
-							if(!mech.isDone)
-							{
-								if(mech.GetComponent<AI>() as AI != null)
-									mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
-								return;//Keep waiting
-							}
-						}
+					if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
+						Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
+					if(Inventory[Interval["turn"]].isDone)
 						NextTurn();
+				}
+				else if(Interval["phase"] == PHASE_END)
+				{
+					if(Weapons.Count > 0)
+					{
+						Inventory[0].Controller.ActivateCamera(1);
+						AttemptFire();
 					}
+					else
+						NextTurn();
+				}
+				else//PHASE_WEAPON or PHASE_DEPLOY
+				{
+					foreach(Mech mech in Inventory)
+					{
+						if(!mech.isDone)
+						{
+							if(mech.GetComponent<AI>() as AI != null)
+								mech.GetComponent<AI>().SimpleAction();//PASS THROUGH FOR NOW
+							return;//Keep waiting
+						}
+					}
+					NextTurn();
 				}
 			}
 		}
@@ -134,11 +147,11 @@ public class Engine : MonoBehaviour
 				case PHASE_ACTION:
 					Interval["phase"]++; break;
 				case PHASE_WEAPON:
-					Interval["turn"] = 0;//reset turns
 					Interval["phase"]++; break;
 				case PHASE_END:
 					IsGameOver = VictoryConditions();
-					Interval["round"]++;//next round
+					Interval["turn"] = 0;//reset turns
+					Interval["round"]++; 
 					Interval["phase"] = PHASE_ACTION; break;
 				default://Is deployment Interval["phase"]
 					Interval["phase"] = PHASE_ACTION; break;
@@ -172,7 +185,7 @@ public class Engine : MonoBehaviour
 			TurnOutput.Set("Round: "+Interval["round"]+": Action Phase ("+Interval["turn"]+")");
 			Inventory[Interval["turn"]].Interval();
 		}
-		else 
+		else if(Interval["phase"] == PHASE_WEAPON || Interval["phase"] == PHASE_DEPLOY)
 		{//Weapon or Deployment Phase
 			boundingBoxOb.gameObject.SetActive(false);
 			if(Interval["phase"] == PHASE_WEAPON)
@@ -187,7 +200,9 @@ public class Engine : MonoBehaviour
 
 	public void RegisterWeapon(Weapon weapon)
 	{
-		Weapons.Add(weapon);
+		if(!Weapons.Contains(weapon))
+			Weapons.Add(weapon);
+		//else is duplicate
 	}
 
 	public void UnregisterWeapon(Weapon weapon)
@@ -197,14 +212,34 @@ public class Engine : MonoBehaviour
 
 	public void AttemptFire()
 	{
+		/*
+     	Vector2 mouse;
+     	RaycastHit hit;
+     	float range = 100.0f;
+     	LineRenderer line;
+     	Material lineMaterial;
+    	line = GetComponent<LineRenderer>();
+        line.SetVertexCount(2);
+        line.renderer.material = lineMaterial;
+        line.SetWidth(0.1f, 0.25f);
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        line.enabled = true;
+        line.SetPosition(0, transform.position);
+        line.SetPosition(1, hit.point + hit.normal);
+        line.enabled = false;             
+        */
 		Weapon weapon = Weapons[0];
+		Debug.Log("WEAPON?");
+		Debug.Log(weapon);
+		ReportUI.UpdateUIAction(weapon);
 		GameObject shotcam = GameObject.Find("ViewFirstPerson");
-		shotcam.transform.position = weapon.Installed.Master.transform.position;
+		Vector3 dirToTarget = (weapon.Selected.transform.position - weapon.Installed.Master.transform.position).normalized;
+		shotcam.transform.position = weapon.Installed.Master.transform.position + new Vector3(dirToTarget.x*-2.0f, 3.0f, dirToTarget.z*-2.0f);
 		shotcam.transform.LookAt(weapon.Selected.transform);
 		Weapons.RemoveAt(0);
 		weapon.Installed.Master.AttemptFire(weapon);
 		weapon.Selected = null;
-		delay = Time.time+1.5f;
+		delay = Time.time+2.0f;
 	}
 
 	public void EventMove(Entity entity, Vector3 to)

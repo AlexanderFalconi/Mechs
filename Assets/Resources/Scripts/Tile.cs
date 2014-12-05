@@ -7,6 +7,7 @@ public class Tile : Entity
 
 	public Tile()
 	{
+		Short = "grass";
 		Size = 10;
 		MoveCost = 1;//TEMP: For now this is default
 	}

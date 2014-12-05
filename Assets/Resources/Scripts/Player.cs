@@ -72,7 +72,9 @@ public class Player : MonoBehaviour
 
 	public void EndTurn()
 	{
-		Controlling.isDone = true;
+		if(Controlling.Environment.IsReady())
+			Controlling.isDone = true;
+		//else, do nothing and wait
 	}
 
 	public void BindControl(Mech entity)

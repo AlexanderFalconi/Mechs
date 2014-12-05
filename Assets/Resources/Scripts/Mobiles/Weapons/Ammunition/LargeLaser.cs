@@ -13,7 +13,7 @@ public class LargeLaser : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 180;
 		Range = 3;
 		SoundFX = "Audio/FXLargeLaser";

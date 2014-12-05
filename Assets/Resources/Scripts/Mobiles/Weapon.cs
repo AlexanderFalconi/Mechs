@@ -72,6 +72,7 @@ public class Weapon : Component
 			Installed.Master.Environment.RegisterWeapon(this);
 		else
 			Installed.Master.Environment.UnregisterWeapon(this);
+		UpdateUI();
 	}
 
     public bool EventDischarge()

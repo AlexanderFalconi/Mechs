@@ -13,7 +13,7 @@ public class ExtraSmallLaser : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 20;
 		Range = 1;
 		SoundFX = "Audio/FXPulseLaser";

@@ -30,7 +30,7 @@ public class Mobile : Entity {
 
 	public void NextFace()
 	{
-	    //audio.PlayOneShot(SoundFX["short motion"]);
+	    audio.PlayOneShot(SoundFX["short motion"]);
 		moveDir = moveTo[0] - transform.position;
 		moveDir.y =0;
         Vector3 dir = Vector3.Cross(faceDir, moveDir);
@@ -84,6 +84,16 @@ public class Mobile : Entity {
 	    audio.PlayOneShot(SoundFX["fall"]);
 		transform.Rotate(0, 0, 90);
 		transform.position += new Vector3(0.0f, -0.5f, 0.0f);
+	}
+
+	public void EventDamage()
+	{
+		audio.PlayOneShot(SoundFX["damage"], 0.5f);
+	}
+
+	public virtual void EventEject()
+	{
+	    audio.PlayOneShot(SoundFX["eject"]);
 	}
 
 	private void EventMove()

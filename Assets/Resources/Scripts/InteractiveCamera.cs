@@ -6,40 +6,47 @@ public class InteractiveCamera : MonoBehaviour
 {
 	
 	public float turnSpeed = 4.0f;		// Speed of camera turning when mouse moves in along an axis
-	public float zoomSpeed = 4.0f;		// Speed of the camera going back and forth
+	public float zoomSpeed = 2.0f;		// Speed of the camera going back and forth
 	
 	private Vector3 mouseOrigin;	// Position of cursor when mouse dragging starts
 	private bool isRotating;	// Is the camera being rotated?
 	private bool isZooming;		// Is the camera zooming?
 
 	public string touched;
+	public bool isUsing = false;
 
 	public void EventTouch(string which)
 	{
+		AudioClip SoundFX = Resources.Load("Audio/FXClick") as AudioClip;
+    	audio.PlayOneShot(SoundFX);
 		touched = which;
+
+	}
+
+	public void EventTouch(bool setting)
+	{
+		isUsing = setting;
 	}
 	
 	public void Update () 
 	{
-
+		if(!isUsing)
+			return;
 		if(Input.GetMouseButtonDown(0) && (touched == "rotate"))
 		{// Get the left mouse button
 			mouseOrigin = Input.mousePosition;
 			isRotating = true;
 		}
+		else if(Input.GetMouseButtonUp(0) && (touched == "rotate"))
+			isRotating = false;
 		
 		if(Input.GetMouseButtonDown(0) && (touched == "zoom"))
 		{// Get the middle mouse button
 			mouseOrigin = Input.mousePosition;
 			isZooming = true;
 		}
-		
-		if (!Input.GetMouseButton(0)) 
-		{
-			isRotating=false;
-			isZooming=false;
-			touched = "";
-		}
+		else if(Input.GetMouseButtonUp(0) && (touched == "zoom"))
+			isZooming = false;
 		
 		if ((touched == "rotate") && isRotating)
 		{// Rotate camera along X and Y axis

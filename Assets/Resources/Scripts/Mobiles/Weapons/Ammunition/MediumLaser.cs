@@ -13,7 +13,7 @@ public class MediumLaser : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 120;
 		Range = 2;
 		SoundFX = "Audio/FXLargeLaser";

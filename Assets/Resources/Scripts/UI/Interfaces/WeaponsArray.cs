@@ -9,10 +9,15 @@ public class WeaponsArray : MonoBehaviour
 
         public void TargetedAction(Entity what)//Controlling.AttemptFire(what.GetComponent<Entity>());
         {
+                Debug.Log("Target");
+                Debug.Log(what);
+
                 foreach(DynamicWeapon weapon in Weapons)
                 {
+                        Debug.Log("outer loop");
                         if(weapon.Selected)
                         {
+                                Debug.Log("inner loop");
                                 weapon.BoundTo.Select(what);
                         }
                 }
@@ -29,5 +34,6 @@ public class WeaponsArray : MonoBehaviour
                 itemUI.GetComponent<DynamicWeapon>().BoundTo = which;
                 itemUI.GetComponent<Button>().onClick.AddListener(itemUI.GetComponent<DynamicWeapon>().Select);//In case the weapon object needs to be selected
                 which.UpdateUI();//Initialize the button
+                Weapons.Add(itemUI.GetComponent<DynamicWeapon>());
         }
 }

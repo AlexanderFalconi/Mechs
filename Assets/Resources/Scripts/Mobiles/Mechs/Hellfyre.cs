@@ -5,6 +5,8 @@ public class Hellfyre : Mech
 {
 	public Hellfyre() : base()
 	{
+		Short = "Hellfyre";
+		Long = "A Hellfyre mech.";
 		//Connect limb
 		Body["center torso"].Attach(this);
 		Body["left torso"].Attach(Body["center torso"], this);

@@ -43,7 +43,7 @@ public class CenterTorso : Part
 		BindUI(Master.Controller.PanelActions.AddAction("Charge", new ActionsArray.CanAction(CanCharge), new ActionsArray.TargetedAction(AttemptCharge)));
 		BindUI(Master.Controller.PanelActions.AddAction("Pounce", new ActionsArray.CanAction(CanPounce), new ActionsArray.TargetedAction(AttemptPounce)));
 		BindUI(Master.Controller.PanelActions.AddAction("Turn", new ActionsArray.CanAction(CanTurn), new ActionsArray.TargetedAction(AttemptTurn)));
-		BindUI(Master.Controller.PanelActions.AddAction("Eject", new ActionsArray.CanAction(CanEject), new ActionsArray.TargetedAction(AttemptEject)));
+		BindUI(Master.Controller.PanelActions.AddAction("Eject", new ActionsArray.CanAction(CanEject), new ActionsArray.SimpleAction(AttemptEject)));
 		//Master.Controller.PanelActions.AddAction("climb", AttemptClimb);
 		base.InitActions();
 	}
@@ -66,6 +66,7 @@ public class CenterTorso : Part
 
 	public bool CanCrawl()
 	{
+		return false;//TEMPORARY
 		if((Master.Posture == Mech.POSTURE_PRONE) && (Master.Speed["walk"] > 0))
 			return true;
 		else
@@ -82,6 +83,7 @@ public class CenterTorso : Part
 
 	public bool CanJump()
 	{
+		return false;//TEMPORARY
 		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["jump"] > 0))
 			return true;
 		else
@@ -98,6 +100,7 @@ public class CenterTorso : Part
 
 	public bool CanProne()
 	{
+		return false;//TEMPORARY
 		if(Master.Posture == Mech.POSTURE_STAND)
 			return true;
 		else
@@ -124,6 +127,7 @@ public class CenterTorso : Part
 
 	public bool CanCharge()
 	{
+		return false;//TEMPORARY
 		if(CanMove())
 			return true;
 		else
@@ -145,6 +149,7 @@ public class CenterTorso : Part
 
 	public bool CanPounce()
 	{
+		return false;//TEMPORARY
 		if(CanJump())
 			return true;
 		else
@@ -176,14 +181,23 @@ public class CenterTorso : Part
 
 	public bool CanEject()
 	{
-		if(!IsTapped || (Master.PilotOb == null) || (Master.PilotOb.Environment.GetStatus() != Component.STATUS_OK))
+
+
+		if(!IsTapped && (Master != null) && (Master.PilotOb != null) && (Master.PilotOb.Environment.GetStatus() == Component.STATUS_OK))
+		{
+			Debug.Log(Master.PilotOb.Environment);
+			if(Master.PilotOb.Environment != null)
+				Debug.Log(Master.PilotOb.Environment.GetStatus());
 			return true;
+		}
 		else
 			return false;
 	}
 
-	public void AttemptEject(Transform what)
+	public void AttemptEject()
 	{
-		Master.PilotOb.Environment = null;
+		Debug.Log("EJECTED");
+		Master.PilotOb.Environment.RemovePersonell();
+		Master.EventEject();
 	}
 }

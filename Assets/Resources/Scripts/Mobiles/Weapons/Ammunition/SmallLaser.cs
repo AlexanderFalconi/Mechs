@@ -13,7 +13,7 @@ public class SmallLaser : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 60;
 		Range = 1;
 		SoundFX = "Audio/FXLargeLaser";

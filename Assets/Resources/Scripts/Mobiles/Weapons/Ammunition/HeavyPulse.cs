@@ -13,7 +13,7 @@ public class HeavyPulse : Ammunition
 		Combustibility = 0.0f;
 		PrefabID = "Bullet";
 		Amount = Bundle;
-		DamageType = "ballistic";
+		DamageType = "energy";
 		Damage["max"] = 60;
 		Range = 9;
 		SoundFX = "Audio/FXPulseLaser";

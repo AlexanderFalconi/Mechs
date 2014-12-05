@@ -16,6 +16,7 @@ public class Mech : Mobile {
 	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"stored", 0}, {"current", 0}};
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion, Thrust;//Mech attributes
 	public Pilot PilotOb = null;
+	public GameObject muzzleFlash;
 	public delegate void UpdateUIOutput(string output); // declare delegate type
 
 	public Mech()
@@ -30,6 +31,8 @@ public class Mech : Mobile {
 		SoundFX["move 4"] = Resources.Load("Audio/FXMechMove4") as AudioClip;
 		SoundFX["destruct"] = Resources.Load("Audio/FXMechExplosion") as AudioClip;
 		SoundFX["reload"] = Resources.Load("Audio/FXReloadBallistic") as AudioClip;
+		SoundFX["eject"] = Resources.Load("Audio/FXEject") as AudioClip;
+		SoundFX["damage"] = Resources.Load("Audio/FXBallisticImpact") as AudioClip;
 	}
 
 	public new Mech BindController(Player who)
@@ -39,17 +42,28 @@ public class Mech : Mobile {
 		return this;
 	}
 
+	public override void EventEject()
+	{
+		PilotOb = null;
+		base.EventEject();
+	}
+
 	public bool LoadPilot(Pilot pilot)
 	{
+		Debug.Log("Trying to load pilot");
 		foreach(KeyValuePair<string,Part> item in Body)
 		{
 			foreach(Component component in item.Value.Components)
 			{
+
 				if(component.AddPersonell(pilot))
 				{//Found a cockpit
+					Debug.Log("found cockpit"+component.Short);
 					PilotOb = pilot;
 					return true;//Done
 				}
+				else
+					Debug.Log("didn't find cockpit"+component.Short);
 			}
 		}
 		return false;//Couldn't find a cockpit
@@ -206,8 +220,6 @@ public class Mech : Mobile {
 		return "mech";
 	}
 
-
-
 	public void AttemptMove(Vector3 position)
 	{
 		EventMove(GetMovementPath(GetDirectSteps(Position, position))); 
@@ -290,6 +302,8 @@ public class Mech : Mobile {
 	public void AttemptFire(Weapon weapon)
 	{
 		Debug.Log("Weapon: "+weapon);
+		int hits = 0;
+		float damage = 0;
 		int shots = weapon.RateOfFire["set"];
 		Entity target = weapon.Selected;
 		Debug.Log("Target: "+target);
@@ -302,7 +316,9 @@ public class Mech : Mobile {
 		{
 			if(weapon.EventDischarge())
 			{
+				GameObject.Instantiate(muzzleFlash, transform.position + new Vector3(0.5f, 0.0f, 0.5f), transform.rotation);//Add mech
 				float result;
+				float inflicted = 0;
 				Debug.Log(target.Position);
 				List<Vector3> steps = GetDirectSteps(Position, target.Position);
 				Dictionary<string,int[]> scan = new Dictionary<string,int[]>() {{"x", new int[] {0, 0} },{"y", new int[] {0, 0} },{"z", new int[] {0, 0} }};
@@ -343,18 +359,24 @@ public class Mech : Mobile {
 										//Debug.Log("An entity is here...");
 										Entity potential = Environment.Grid[scan["x"][x],scan["y"][y],scan["z"][z]][0];//Takes the first element of the list for now
 										if(potential == target)
-											EventRangedAttack((Mech)target, ammo);//Try to hit intended target
+											inflicted += EventRangedAttack((Mech)target, ammo);//Try to hit intended target
 										else
-											EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
+											inflicted += EventIndirectAttack(potential, ammo);//See if accidentally hit wrong target
 									}//Else, no entity is here
 									x = y = z = 2;//Force a break out of these 3 loops; move on to next step
 								}
 							}
 						}
 					}
+					if(inflicted > 0.0f)
+					{
+						hits++;
+						damage += inflicted;
+					}
 					if(ammo.Damage["remaining"] < 1)
 						break;//This round is spent, try next round
 				}
+				Environment.ReportUI.UpdateUIResult(hits, damage);
 			}
 			else
 				break;//Out of rounds
@@ -365,13 +387,10 @@ public class Mech : Mobile {
 	{
 		foreach(Component component in weapon.Installed.Components)
 		{
-			Debug.Log("Checking: "+component.GetShort());
 			if(component.GetSystem() == "ammunition")
 			{
-				Debug.Log("Is Ammo: "+component.GetShort());
 				if(((Ammunition)component).Ammo.Contains(weapon.GetShort()))
 				{
-					Debug.Log("Weapon can contain: "+component.GetShort());
 					weapon.EventLoad((Ammunition)component);
 					return true;
 				}
@@ -398,8 +417,11 @@ public class Mech : Mobile {
 		Debug.Log("Loaded: "+weapon.Loaded);
 		if(!weapon.CanFire())
 			return false;
+		Debug.Log("passed weapon canfire subroutine");
 		arc = weapon.Installed.GetFiringArc();
 		degree = Vector3.Angle(Position, target);
+		return true;
+		//TEMPORARY--skip the firing arc for now
 		if(degree < arc[0] || degree > arc[1])
 			return true;
 		else
@@ -503,7 +525,6 @@ public class Mech : Mobile {
 		accuracy += GetAccuracyPenalty(ammo);//Lost actuators or other circumstances
 		accuracy += target.GetDodge();//not yet set
 		Debug.Log("Accuracy: "+accuracy);
-		accuracy = 1;//TEMP TEMP TEMP TEMP FOR TESTING NEVER MISS
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 			return target.EventDamage(this, ammo);
 		else
@@ -604,7 +625,7 @@ public class Mech : Mobile {
 	public int EventDamage(Mech attacker, Ammunition ammo)
 	{
 		Debug.Log("UNIT HIT: "+this);
-		//audio.Play();//TEMP: this should be moved to render
+		base.EventDamage();
 		string table = GetHitTable(attacker);//Get hit table
 		string location = "none";
 		string side = "external";//Flag to take from ordinary external

@@ -5,6 +5,8 @@ public class Bushwacker : Mech
 {
 	public Bushwacker() : base()
 	{
+		Short = "Bushwacker";
+		Long = "A Bushwacker mech.";
 		Body["center torso"].Attach(this);
 		Body["left torso"].Attach(Body["center torso"], this);//Connect limb
 		Body["right torso"].Attach(Body["center torso"], this);

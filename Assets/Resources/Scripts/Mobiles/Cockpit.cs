@@ -12,7 +12,9 @@ public class Cockpit : Component
 		if(PilotOb == null)
 		{//Enough room
 			PilotOb = pilot;
-			pilot.Environment = this;
+			PilotOb.Environment = this;
+			Debug.Log("important enviro snippet happened");
+			Debug.Log(PilotOb.Environment);
 			return true;
 		}
 		else//Full
