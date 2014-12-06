@@ -33,7 +33,7 @@ public class Arm : Part
 
 	public override int GetMeleeDamage()
 	{
-		return Mathf.FloorToInt(Proportion["mass"] * Force/Master.GetMass());
+		return Mathf.FloorToInt(Force/Proportion["mass"]*10.0f);
 	}
 
 	public override void EventMeleeBacklash()

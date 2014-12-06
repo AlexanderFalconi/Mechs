@@ -11,7 +11,7 @@ public class Leg : Part
 
 	public override int GetMeleeDamage()
 	{
-		return Mathf.FloorToInt(Proportion["mass"] * Force/Master.GetMass());
+		return Mathf.FloorToInt(Force/Proportion["mass"] * 10.0f);
 	}
 
 	public override void EventMeleeBacklash()
@@ -47,7 +47,7 @@ public class Leg : Part
 			Master.EventMeleeAttack(target, this);
 			foreach(KeyValuePair<string,Part> limb in Master.Body)
 			{//No other leg can kick 
-				if((Leg)limb.Value != null)
+				if(limb.Value is Leg)
 					limb.Value.IsTapped = true;
 			}
 		}

@@ -9,7 +9,7 @@ public class Engine : MonoBehaviour
 	public const int PHASE_ACTION = 1;
 	public const int PHASE_WEAPON = 2;
 	public const int PHASE_END = 3;
-	private static float[] Random = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
+	private static float[] Dice = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
 	public List<Mech> Inventory = new List<Mech>();
 	public Dictionary<string,int> Interval = new Dictionary<string,int>() {{"turn", 0}, {"round", 0}, {"phase", 0}};//Sentinel value 1000
 	public Transform boundingBox, grass, hellfyre, bushwacker;
@@ -259,6 +259,46 @@ public class Engine : MonoBehaviour
 			dc = 0;
 		else if(dc > 11)
 			dc = 11;
-		return Random[dc];
+		return Dice[dc];
+	}
+
+	public Entity GetCollision(Mech movant, Entity respondent)
+	{
+		float inevitable = 0.0f;
+		List<Entity> others = Grid[(int)movant.Position.x,(int)movant.Position.y,(int)movant.Position.z];
+		if(others.Count <= 1)
+			return null;//Can't collide with self
+		if(others.Contains(respondent))
+			return respondent;//Singled out for collision
+		foreach(Entity ent in others)
+			inevitable += Mathf.Pow(ent.Size, 2.0f);
+		if(Random.Range(0.1f, 100.0f) <= inevitable)
+		{//A collision must happen
+			inevitable -= Mathf.Pow(movant.Size, 2.0f);
+			others.Remove((Entity)movant);
+			float result = Random.Range(0.1f, inevitable);
+			foreach(Entity ent in others)
+			{//Pick one to collide with
+				result -= Mathf.Pow(ent.Size, 2.0f);
+				if(result <= 0.0f)
+					return ent;
+			}
+		}
+		return null;//No collision
+	}
+
+	public bool CanOccupy(Mech movant)
+	{
+		int occupance = 0;
+		List<Entity> others = Grid[(int)movant.Position.x,(int)movant.Position.y,(int)movant.Position.z];
+		foreach(Entity ent in others)
+		{
+			if(((Mech)ent).Posture != Mech.POSTURE_PRONE)
+				occupance += ent.Size;
+		}
+		if(occupance > 10)
+			return false;//Too crowded
+		else
+			return true;
 	}
 }

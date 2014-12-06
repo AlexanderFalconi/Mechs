@@ -248,14 +248,12 @@ public class Mech : Mobile {
 			EventFall(1);
 	}
 
-	//Also accidental collisions
-	//when kick check other leg and disable kick
-	//click button--SELECT TARGET? logo or something?
 	//case "turn":///////////////
 	//dont do jump until we have new terrain maps
 
-	public void EventMove(List<Vector3> path)
+	public void EventMove(List<Vector3> path, Entity intentional = null)
 	{
+		Entity collider;
 		int cost;
 		List<Vector3> tmp = new List<Vector3>();
 		foreach(Vector3 move in path)
@@ -270,8 +268,13 @@ public class Mech : Mobile {
 			tmp.Add(move);
 			Environment.EventMove(this, move);
 			Position = move;
-			//Debug.Log()
 			Facing = Position - move;
+			collider = Environment.GetCollision(this, intentional);
+			if(collider != null)
+			{
+				if(!EventCollisionAttack(collider, intentional))
+					break;//The collision arrested the move
+			}
 			if(((Speed["moved"] > Speed["walk"]) && (Balance/GetMass() < 2.0f) && !EventManeuver(2)) || 
 				((Speed["moved"] <= Speed["walk"]) && (Balance/GetMass() < 1.0f) && !EventManeuver(1)))
 			{
@@ -453,7 +456,10 @@ public class Mech : Mobile {
         Debug.Log(accuracy);
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
-	 		EventDamage(target, simulate);//If actually hit
+			Debug.Log("MELEE DAMAGE IS: ");
+			Debug.Log(simulate.Damage["max"]);
+
+	 		target.EventDamage(this, simulate);//If actually hit
 	 		limb.EventMeleeBacklash();//Sometimes can hurt self
 	 		Debug.Log("MELEE HIT!");
  		}
@@ -463,13 +469,8 @@ public class Mech : Mobile {
     }
 
     /*
-    also do accidental charge
-    also do ram
-    for charge need 1 extra hex past target
     also do reverse move
     also do turning
-    also do on a charge miss; fall or both balance penalties go to you
-    also pilot check per 5%tonnage damage taken.
     on pounce based on jump hex hit
     ratio of balance locomotion for how high you can go
     add sensors
@@ -478,8 +479,11 @@ public class Mech : Mobile {
 	*/
 	public void EventCharge(Vector3 pos, Entity target)
 	{
-		//(Vector3.Distance(Master.Position, target.Position) < 2.0f)
-
+		List<Vector3> path = GetMovementPath(GetDirectSteps(Position, target.Position));
+		Vector3 extra = path[0];//Add an extra step onto the path
+		EventMove(path, target);//Try to move through the target's path
+		if(!Environment.CanOccupy(this))
+			EventFall(1);//Ended up in an overloaded space, must fall
 	}
 
 	public void EventPounce(Vector3 pos, Entity target)
@@ -487,15 +491,25 @@ public class Mech : Mobile {
 		//(Vector3.Distance(Master.Position, target.Position) < 2.0f)
 	}
 
-
-    public void EventCollisionAttack(Mech target)
+    public bool EventCollisionAttack(Entity collider, Entity intentional)
     {
-        int accuracy = PilotOb.Piloting - target.PilotOb.Piloting + Body["center torso"].GetMeleeCR();
+        int accuracy;
+        if(collider == intentional)//Trying to hit this target
+        	accuracy = Body["center torso"].GetMeleeCR() + PilotOb.Piloting - collider.PilotOb.Piloting;
+        else//Trying to avoid this target
+        	accuracy = Body["center torso"].GetMeleeCR() + PilotOb.Piloting + collider.PilotOb.Piloting;
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
-			target.EventDamage(this, new Bludgeoning(Body["center torso"].GetMeleeDamage()));
-		 	Body["center torso"].EventMeleeBacklash();//Sometimes can hurt self
+			collider.EventCollision(GetMass() * 5.0f * Momentum);//Collided
+			EventCollision(collider.GetMass() * 5.0f * Momentum);//Collided
+			if((Posture != POSTURE_PRONE) && (collider.Posture == POSTURE_PRONE))
+				return true;//Still standing and toppled the other entity, can keep going
+			else
+				return false;//Either fell down or failed to fell the other entity
 		}
+		else if(intentional != null)
+			Body["center torso"].EventMeleeBacklash();//Missed target
+		return true;//Missed target
     }
 
     public void EventCollision(int damage)
@@ -515,7 +529,9 @@ public class Mech : Mobile {
 			}
 	 		EventDamage(this, cluster);//If actually hit
 		}
-    }    
+ 		if(!EventManeuver(Momentum))
+ 			EventFall(1);
+    }
 
 	public float EventRangedAttack(Mech target, Ammunition ammo)
 	{//Direct fire

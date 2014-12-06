@@ -1,3 +1,8 @@
+WE NEED TO FILTER OTHERS from having prone mechs
+create a movement library for engine to inherit after changing name of engine to environment?
+
+
+
 TODO at school>>>>>>>>>>start testing through>>>>>>>>>>>>>>
 test pilot death (after camera phase 2)
 test AI ejection (after camera phase 2)
@@ -14,7 +19,7 @@ YVETTE SITE
 =======================
 fine tune all models
 First Person Slow Motion Camera
-collisions/pounce
+/pounce
 turn costs
 jumping
 

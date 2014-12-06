@@ -30,7 +30,7 @@ public class CenterTorso : Part
 
 	public override void EventMeleeBacklash()
 	{
-		EventDamage(new Bludgeoning(Mathf.FloorToInt(Master.GetMass() / 10.0f) * Master.Speed["momentum"]));
+		Master.EventManeuver(Master.Momentum + 2);//Balance after a missed charge
 	}
 
 	public override void InitActions()
