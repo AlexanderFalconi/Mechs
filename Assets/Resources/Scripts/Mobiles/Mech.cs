@@ -44,6 +44,7 @@ public class Mech : Mobile {
 
 	public override void EventEject()
 	{
+		PilotOb.Environment.RemovePersonell();
 		PilotOb = null;
 		base.EventEject();
 	}
@@ -220,9 +221,9 @@ public class Mech : Mobile {
 		return "mech";
 	}
 
-	public void AttemptMove(Vector3 position)
+	public void AttemptMove(Vector3 position, bool reverse = false)
 	{
-		EventMove(GetMovementPath(GetDirectSteps(Position, position))); 
+		EventMove(GetMovementPath(GetDirectSteps(Position, position)), reverse); 
 	}
 
 	private int GetMovementCost(Vector3 position)
@@ -238,26 +239,68 @@ public class Mech : Mobile {
 			return 4;//Crawling
 	}
 
-	public void AttemptJump(List<Vector3> path)
+	public void EventJump()
 	{
 		Speed["jumped"] = 1;
+		Speed["momentum"] = 1;
 		Posture = POSTURE_JUMP;
-		EventMove(path);
-		Posture = POSTURE_STAND;
-		if(((Stabilization/GetMass() < 2.0f) || (Balance/GetMass() < 2.0f)) && (!EventManeuver(3)))
-			EventFall(1);
+		EventMove(new List<Vector3>() {Position + new Vector3(0.0f, 1.0f, 0.0f))};//Now in midair
 	}
 
-	//case "turn":///////////////
-	//dont do jump until we have new terrain maps
+	public void EndTurn()
+	{
+		isDone = true;
+		if(Posture = POSTURE_JUMP)
+			EventLand();
+	}
 
-	public void EventMove(List<Vector3> path, Entity intentional = null)
+	public void EventLand(Entity intentional = null)
+	{
+		int ratio = Mathf.FloorToInt(Balance / GetMass());
+		Vector3 locator = new Vector3(Position.x,Position.y-1.0f,Position.z);
+		Vector3 falling = new Vector3(0.0f, -1.0f, 0.0f);
+		List<Vector3> tmp = new List<Vector3>();
+		while(Environment.Grid[locator.x,locator.y,locator.z].Count < 1 || !(Environment.Grid[locator.x,locator.y,locator.z] is Tile))//air
+		{
+			locator.y -= 1.0f;
+			Speed["falling"]++;
+			tmp.Add(falling);
+			Environment.EventMove(this, falling);
+			collider = Environment.GetCollision(this, intentional);
+			if(collider != null)
+			{
+				if(!EventCollisionAttack(collider, intentional))
+					break;//The collision arrested the move
+			}
+		}
+		Posture = POSTURE_STAND;
+		Speed["momentum"] = 0;
+		Speed["falling"] = 0;
+		if(((Stabilization/GetMass() < 2.0f) || (Balance/GetMass() < 2.0f)) && (!EventManeuver(3+Speed["falling"])))
+			EventFall(fall+1);
+		if(tmp.Count > 0)
+		{
+			isReady = false;
+			moveTo = tmp;
+			NextFace();			
+		}//else can't move
+		if(Posture != POSTURE_PRONE || !Environment.CanOccupy(this))
+			EventFall(1);//Ended up in an overloaded space, must fall
+		UpdateUI();		
+	}
+
+	public void EventMove(List<Vector3> path, Entity intentional = null, bool reverse = false)
 	{
 		Entity collider;
 		int cost;
 		List<Vector3> tmp = new List<Vector3>();
 		foreach(Vector3 move in path)
 		{
+			//COMPARE THIS MOVE WITH LAST MOVE
+			//IF DIFFERENT DURECTION
+			//NEED TO TURN
+			//TIE IN EVENT TURN HERE
+			//USE IT BY ITSELF FOR TURN ACTION
 			if(((Posture == POSTURE_JUMP) && (Speed["moved"] >= Speed["jump"])) || ((Posture != POSTURE_JUMP) && (Speed["moved"] >= Speed["run"])))
 				break;
   			cost = GetMovementCost(move);
@@ -288,6 +331,8 @@ public class Mech : Mobile {
 			moveTo = tmp;
 			NextFace();			
 		}//else can't move
+		if(Posture != POSTURE_PRONE || !Environment.CanOccupy(this))
+			EventFall(1);//Ended up in an overloaded space, must fall
 		UpdateUI();
 	}
 
@@ -458,8 +503,7 @@ public class Mech : Mobile {
 		{
 			Debug.Log("MELEE DAMAGE IS: ");
 			Debug.Log(simulate.Damage["max"]);
-
-	 		target.EventDamage(this, simulate);//If actually hit
+	 		target.EventDamage(this, simulate, limb.Level);//If actually hit
 	 		limb.EventMeleeBacklash();//Sometimes can hurt self
 	 		Debug.Log("MELEE HIT!");
  		}
@@ -468,27 +512,18 @@ public class Mech : Mobile {
  		UpdateUI();
     }
 
-    /*
-    also do reverse move
-    also do turning
-    on pounce based on jump hex hit
-    ratio of balance locomotion for how high you can go
-    add sensors
-    add electro reactive armor
-    add guerilla-tek chameleon plating
-	*/
-	public void EventCharge(Vector3 pos, Entity target)
+	public void EventCharge(Entity target)
 	{
 		List<Vector3> path = GetMovementPath(GetDirectSteps(Position, target.Position));
 		Vector3 extra = path[0];//Add an extra step onto the path
 		EventMove(path, target);//Try to move through the target's path
-		if(!Environment.CanOccupy(this))
-			EventFall(1);//Ended up in an overloaded space, must fall
 	}
 
-	public void EventPounce(Vector3 pos, Entity target)
+	public void EventPounce(Entity target)
 	{
-		//(Vector3.Distance(Master.Position, target.Position) < 2.0f)
+		List<Vector3> path = GetMovementPath(GetDirectSteps(new Vector3(Position, target.Position.x, Position.y,target.Position.z)));
+		EventMove(path, target);//Try to move to above the target
+		EventLand(target);
 	}
 
     public bool EventCollisionAttack(Entity collider, Entity intentional)
@@ -500,8 +535,16 @@ public class Mech : Mobile {
         	accuracy = Body["center torso"].GetMeleeCR() + PilotOb.Piloting + collider.PilotOb.Piloting;
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
-			collider.EventCollision(GetMass() * 5.0f * Momentum);//Collided
-			EventCollision(collider.GetMass() * 5.0f * Momentum);//Collided
+			if(Speed["falling"] > 0.0f)
+			{
+				collider.EventCollision(GetMass() * Speed["falling"], "top");//Collided
+				EventCollision(collider.GetMass(), "bottom");//Collided
+			}
+			else
+			{
+				collider.EventCollision(GetMass() * (Speed["momentum"]), "standard");//Collided
+				EventCollision(collider.GetMass() * collider.Speed["momentum"], "standard");//Collided
+			}
 			if((Posture != POSTURE_PRONE) && (collider.Posture == POSTURE_PRONE))
 				return true;//Still standing and toppled the other entity, can keep going
 			else
@@ -512,14 +555,14 @@ public class Mech : Mobile {
 		return true;//Missed target
     }
 
-    public void EventCollision(int damage)
+    public void EventCollision(int damage, string table)
     {
         Ammunition cluster;
 		while(damage > 0)
 		{
-			if(damage > Mathf.FloorToInt(GetMass()/10.0f))
+			if(damage > Mathf.FloorToInt(GetMass()/10.0f * 5.0f))
 			{
-				cluster = new Bludgeoning(Mathf.FloorToInt(GetMass()/10.0f));
+				cluster = new Bludgeoning(Mathf.FloorToInt(GetMass()/10.0f * 5.0f));
 				damage -= cluster.Amount;
 			}
 			else
@@ -527,7 +570,7 @@ public class Mech : Mobile {
 				cluster = new Bludgeoning(damage);
 				damage = 0;
 			}
-	 		EventDamage(this, cluster);//If actually hit
+	 		EventDamage(this, cluster, table);//If actually hit
 		}
  		if(!EventManeuver(Momentum))
  			EventFall(1);
@@ -542,7 +585,7 @@ public class Mech : Mobile {
 		accuracy += target.GetDodge();//not yet set
 		Debug.Log("Accuracy: "+accuracy);
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
-			return target.EventDamage(this, ammo);
+			return target.EventDamage(this, ammo, "standard");
 		else
 			return 0.0f;
 	}
@@ -638,7 +681,7 @@ public class Mech : Mobile {
 			return false;
 	}
 
-	public int EventDamage(Mech attacker, Ammunition ammo)
+	public int EventDamage(Mech attacker, Ammunition ammo, string level)
 	{
 		Debug.Log("UNIT HIT: "+this);
 		base.EventDamage();

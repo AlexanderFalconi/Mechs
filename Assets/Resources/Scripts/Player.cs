@@ -73,7 +73,7 @@ public class Player : MonoBehaviour
 	public void EndTurn()
 	{
 		if(Controlling.Environment.IsReady())
-			Controlling.isDone = true;
+			Controlling.EndTurn();
 		//else, do nothing and wait
 	}
 

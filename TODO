@@ -1,8 +1,5 @@
 WE NEED TO FILTER OTHERS from having prone mechs
 create a movement library for engine to inherit after changing name of engine to environment?
-
-
-
 TODO at school>>>>>>>>>>start testing through>>>>>>>>>>>>>>
 test pilot death (after camera phase 2)
 test AI ejection (after camera phase 2)
@@ -13,27 +10,21 @@ why wont enemy lasers fire
 why wont camera angle right
 show smoke on targets that are damaged (after camera phase 1)
 get laser beams to render
+fine tune all models
+First Person Slow Motion Camera
 
+we're going to need callbacks for moving, falling, reversing, and crawling and handling these things
 =======================
 YVETTE SITE
 =======================
-fine tune all models
-First Person Slow Motion Camera
-/pounce
-turn costs
-jumping
-
 start on first motion
 1. homework packets
 a. an order to show cause 20 days in jail
 b. an order clarifying
-
 3. order regarding recording us and pictures
-
 4. writ of execution (separate)
-
 
 Minor stuff:
 change engine to environment
-namespaces for teh constants
+namespaces for the constants
 dont do manual .Find for camera in engine

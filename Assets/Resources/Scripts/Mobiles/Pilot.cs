@@ -34,6 +34,8 @@ public class Pilot {
 	{
 		HP = 0;
 		Conscious = false;
+		if(Environment != null)
+			Environment.RemovePersonell();
 	}
 
 	public string UIReport()

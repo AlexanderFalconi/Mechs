@@ -36,8 +36,9 @@ public class CenterTorso : Part
 	public override void InitActions()
 	{
 		BindUI(Master.Controller.PanelActions.AddAction("Move", new ActionsArray.CanAction(CanMove), new ActionsArray.TargetedAction(AttemptMove)));
+		BindUI(Master.Controller.PanelActions.AddAction("Reverse", new ActionsArray.CanAction(CanReverse), new ActionsArray.TargetedAction(AttemptReverse)));
 		BindUI(Master.Controller.PanelActions.AddAction("Crawl", new ActionsArray.CanAction(CanCrawl), new ActionsArray.TargetedAction(AttemptCrawl)));
-		BindUI(Master.Controller.PanelActions.AddAction("Jump", new ActionsArray.CanAction(CanJump), new ActionsArray.TargetedAction(AttemptJump)));
+		BindUI(Master.Controller.PanelActions.AddAction("Jump", new ActionsArray.CanAction(CanJump), new ActionsArray.SimpleAction(AttemptJump)));
 		BindUI(Master.Controller.PanelActions.AddAction("Prone", new ActionsArray.CanAction(CanProne), new ActionsArray.SimpleAction(AttemptProne)));
 		BindUI(Master.Controller.PanelActions.AddAction("Stand", new ActionsArray.CanAction(CanStand), new ActionsArray.SimpleAction(AttemptStand)));
 		BindUI(Master.Controller.PanelActions.AddAction("Charge", new ActionsArray.CanAction(CanCharge), new ActionsArray.TargetedAction(AttemptCharge)));
@@ -59,14 +60,27 @@ public class CenterTorso : Part
 	public void AttemptMove(Transform what)
 	{
 		Entity location = Master.Environment.GetGridLocation(what.position)[0];
-		Vector3 pos = location.Position;
-		pos.y += 1;
+		Vector3 pos = location.Position = new Vector3(0.0f, 1.0f, 0.0f);
 		Master.AttemptMove(pos);
+	}
+
+	public bool CanReverse()
+	{
+		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["walk"] > 0))
+			return true;
+		else
+			return false;
+	}
+
+	public void AttemptReverse(Transform what)
+	{
+		Entity location = Master.Environment.GetGridLocation(what.position)[0];
+		Vector3 pos = location.Position = new Vector3(0.0f, 1.0f, 0.0f);
+		Master.AttemptReverse(pos);
 	}
 
 	public bool CanCrawl()
 	{
-		return false;//TEMPORARY
 		if((Master.Posture == Mech.POSTURE_PRONE) && (Master.Speed["walk"] > 0))
 			return true;
 		else
@@ -83,24 +97,19 @@ public class CenterTorso : Part
 
 	public bool CanJump()
 	{
-		return false;//TEMPORARY
 		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["jump"] > 0))
 			return true;
 		else
 			return false;
 	}
 
-	public void AttemptJump(Transform what)
+	public void AttemptJump()
 	{
-		Entity location = Master.Environment.GetGridLocation(what.position)[0];
-		Vector3 pos = location.Position;
-		pos.y += 1;
-		Master.AttemptMove(pos);
+		EventJump();
 	}
 
 	public bool CanProne()
 	{
-		return false;//TEMPORARY
 		if(Master.Posture == Mech.POSTURE_STAND)
 			return true;
 		else
@@ -127,7 +136,6 @@ public class CenterTorso : Part
 
 	public bool CanCharge()
 	{
-		return false;//TEMPORARY
 		if(CanMove())
 			return true;
 		else
@@ -144,13 +152,11 @@ public class CenterTorso : Part
 			foreach(KeyValuePair<string,Part> limb in Master.Body)
 				limb.Value.IsTapped = true;
 		}
-
 	}
 
 	public bool CanPounce()
 	{
-		return false;//TEMPORARY
-		if(CanJump())
+		if(Master.Posture == Mech.POSTURE_JUMP)
 			return true;
 		else
 			return false;
@@ -196,8 +202,6 @@ public class CenterTorso : Part
 
 	public void AttemptEject()
 	{
-		Debug.Log("EJECTED");
-		Master.PilotOb.Environment.RemovePersonell();
 		Master.EventEject();
 	}
 }
