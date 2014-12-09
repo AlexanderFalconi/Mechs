@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class Weapon : Component 
 {
@@ -30,7 +31,7 @@ public class Weapon : Component
 			max = Capacity;
 		Amount +=Loaded.EventReloading(max);//Transfer ammo from loaded bundle into weapon
 		Installed.Consolidate(Loaded);//Try to consolidate ammo into the loaded ammunition
-		if(Installed.Master.Environment.Interval["phase"] != Engine.PHASE_DEPLOY)
+		if(Installed.Master.Environment.Phase != Phases.DEPLOY)
 			Reload["waiting"] = Reload["delay"];//Set reload lag
 		//else reload is free
 		UpdateUI();
@@ -95,7 +96,7 @@ public class Weapon : Component
 	public override void Interval()
 	{
 
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 		{
 			if(Reload["waiting"] > 0)
 	        	Reload["waiting"]--;//Tick through reload delay

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Config;
 
 public class M1HipActuator : Actuator 
 {
@@ -23,7 +24,7 @@ public class M1HipActuator : Actuator
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 		{
 			Installed.Master.Balance += GetBalance();
 			Installed.Master.Mobility += GetMobility();

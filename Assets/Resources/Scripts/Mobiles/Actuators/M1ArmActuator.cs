@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Config;
 
 public class M1ArmActuator : Actuator 
 {
@@ -23,7 +24,7 @@ public class M1ArmActuator : Actuator
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 		{
 			Installed.Rotation += GetRotation();
 			Installed.Accuracy += GetAccuracy();

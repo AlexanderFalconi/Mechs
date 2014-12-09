@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using Config;
 
 public class DynamicWeapon : Interface 
 {
@@ -22,11 +23,11 @@ public class DynamicWeapon : Interface
 			NameLabel.fontStyle = FontStyle.Normal;
 		switch(BoundTo.Status)
 		{
-			case 0:
+			case Statuses.OK:
 				statusColor = new Color(0.23f, 0.51f, 0.03f, 1.0f); break;
-			case 1:
+			case Statuses.STUN:
 				statusColor = new Color(0.96f, 0.89f, 0.12f, 1.0f); break;
-			case 2:
+			case Statuses.DAMAGE:
 				statusColor = new Color(1.0f, 0.0f, 0.0f, 1.0f); break;
 			default://Destroyed
 				statusColor = new Color(0.58f, 0.04f, 0.04f, 1.0f); break;
@@ -48,7 +49,7 @@ public class DynamicWeapon : Interface
 		if(BoundTo.Loaded == null)
 		{
 	        audio.PlayOneShot(SoundFX[0]);
-			BoundTo.Installed.Master.OrderLoad(BoundTo);
+			BoundTo.Installed.Master.AttemptLoad(BoundTo);
 		}
 		else if(BoundTo.Amount < 1)
 		{
@@ -56,7 +57,7 @@ public class DynamicWeapon : Interface
 	        	audio.PlayOneShot(SoundFX[0]);
 	        else
 	        	audio.PlayOneShot(SoundFX[1]);
-			BoundTo.Installed.Master.OrderReload(BoundTo);
+			BoundTo.Installed.Master.AttemptReload(BoundTo);
 		}
 		else if(BoundTo.Reload["waiting"] > 0)
 			audio.PlayOneShot(SoundFX[2]);

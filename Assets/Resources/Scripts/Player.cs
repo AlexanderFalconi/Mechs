@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using Config;
 
 public class Player : MonoBehaviour 
 {
@@ -56,19 +56,19 @@ public class Player : MonoBehaviour
 	
 	public void Order(Transform what)
 	{
-		switch(Controlling.Environment.Interval["phase"])
+		switch(Controlling.Environment.Phase)
 		{
-			case Engine.PHASE_ACTION:
-				if(PanelActions.Selected != null && PanelActions.Selected.TargetedAction != null)
-					PanelActions.Selected.TargetedAction(what);
+			case Phases.ACTION:
+				if((PanelActions.Selected != null) && (PanelActions.Selected.TargetedActionHandler != null))
+					PanelActions.Selected.TargetedActionHandler(what);
 				break;
-			case Engine.PHASE_WEAPON:
+			case Phases.WEAPON:
 					PanelWeapons.TargetedAction(what.GetComponent<Entity>()); 
 				break;
 			default: //PHASE_DEPLOY
 				return;
 		}
-	}
+	} 
 
 	public void EndTurn()
 	{

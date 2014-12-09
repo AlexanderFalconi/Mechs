@@ -1,16 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using Config;
 
 public class DynamicAction : Interface 
 {
 	public Text NameLabel;
 	public string Action;
 	public bool Selected = false;
-    public ActionsArray.CanAction CanAction;
-    public ActionsArray.SimpleAction SimpleAction;
-    public ActionsArray.TargetedAction TargetedAction;
     public AudioClip[] SoundFX = new AudioClip[2];
+    public TargetedAction TargetedActionHandler;
+    public SimpleAction SimpleActionHandler;
+    public CanAction CanActionHandler;
 
 	public void Select()
 	{
@@ -28,7 +29,7 @@ public class DynamicAction : Interface
 
 	public override void UpdateUI()
 	{
-		gameObject.SetActive(CanAction());
+		gameObject.SetActive(CanActionHandler());
 		NameLabel.text = Action;
 		if(Selected)
 			NameLabel.fontStyle = FontStyle.Bold;

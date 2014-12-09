@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Config;
 
 public class Gyro : Component {
 	public float Stabilization;
@@ -16,7 +17,7 @@ public class Gyro : Component {
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 			Installed.Master.Stabilization += Stabilization;
 		base.Interval();
   	}

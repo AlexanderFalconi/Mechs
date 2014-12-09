@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class Reactor : Component 
 {
-	public float Power;
+	public float Power, Efficiency;
 
 	public Reactor(float mass)
 	{
+		Efficiency = 100;//Full efficiency
 		if(mass % 0.25f > 0.0f)
 			Debug.LogError("Reactor mass must be in increments of 0.25.");
 		SetMass(mass);
@@ -19,20 +21,21 @@ public class Reactor : Component
 
     public override void EventDamage(int dmg)
     {//Override
-    	Status += dmg*dmg;
-    	if(Status > 100)
-    		Status = 100;
+    	Efficiency -= Mathf.Pow(dmg, 2);
+    	if(Efficiency < 0)
+    	{
+    		Efficiency = 0;
+    		Status = Statuses.DESTROY;
+    	}
+    	else if(Efficiency < 100)
+    		Status = Statuses.DAMAGE;
+    	else
+    		Status = Statuses.OK;
     }
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
-		{
-			float efficiency = 1.0f - (float)GetStatus();
-			if(efficiency < 0.0f)
-				efficiency = 0.0f;
-			Installed.Master.AddEnergy(Power * efficiency);
-		}
+		Installed.Master.AddEnergy(Power * Efficiency / 100);
 		//Reactors do not recover from stun, base.Interval call is skipped.
 		UpdateUI();//Need to update here because base.Interval call is skipped.
   	}

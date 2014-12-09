@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class CenterTorso : Part 
 {
@@ -30,28 +31,28 @@ public class CenterTorso : Part
 
 	public override void EventMeleeBacklash()
 	{
-		Master.EventManeuver(Master.Momentum + 2);//Balance after a missed charge
+		Master.EventManeuver(Master.Speed["momentum"] + 2);//Balance after a missed charge
 	}
 
 	public override void InitActions()
 	{
-		BindUI(Master.Controller.PanelActions.AddAction("Move", new ActionsArray.CanAction(CanMove), new ActionsArray.TargetedAction(AttemptMove)));
-		BindUI(Master.Controller.PanelActions.AddAction("Reverse", new ActionsArray.CanAction(CanReverse), new ActionsArray.TargetedAction(AttemptReverse)));
-		BindUI(Master.Controller.PanelActions.AddAction("Crawl", new ActionsArray.CanAction(CanCrawl), new ActionsArray.TargetedAction(AttemptCrawl)));
-		BindUI(Master.Controller.PanelActions.AddAction("Jump", new ActionsArray.CanAction(CanJump), new ActionsArray.SimpleAction(AttemptJump)));
-		BindUI(Master.Controller.PanelActions.AddAction("Prone", new ActionsArray.CanAction(CanProne), new ActionsArray.SimpleAction(AttemptProne)));
-		BindUI(Master.Controller.PanelActions.AddAction("Stand", new ActionsArray.CanAction(CanStand), new ActionsArray.SimpleAction(AttemptStand)));
-		BindUI(Master.Controller.PanelActions.AddAction("Charge", new ActionsArray.CanAction(CanCharge), new ActionsArray.TargetedAction(AttemptCharge)));
-		BindUI(Master.Controller.PanelActions.AddAction("Pounce", new ActionsArray.CanAction(CanPounce), new ActionsArray.TargetedAction(AttemptPounce)));
-		BindUI(Master.Controller.PanelActions.AddAction("Turn", new ActionsArray.CanAction(CanTurn), new ActionsArray.TargetedAction(AttemptTurn)));
-		BindUI(Master.Controller.PanelActions.AddAction("Eject", new ActionsArray.CanAction(CanEject), new ActionsArray.SimpleAction(AttemptEject)));
+		BindUI(Master.Controller.PanelActions.AddAction("Move", new CanAction(CanMove), new TargetedAction(AttemptMove)));
+		BindUI(Master.Controller.PanelActions.AddAction("Reverse", new CanAction(CanReverse), new TargetedAction(AttemptReverse)));
+		BindUI(Master.Controller.PanelActions.AddAction("Crawl", new CanAction(CanCrawl), new TargetedAction(AttemptCrawl)));
+		BindUI(Master.Controller.PanelActions.AddAction("Jump", new CanAction(CanJump), new SimpleAction(AttemptJump)));
+		BindUI(Master.Controller.PanelActions.AddAction("Prone", new CanAction(CanProne), new SimpleAction(AttemptProne)));
+		BindUI(Master.Controller.PanelActions.AddAction("Stand", new CanAction(CanStand), new SimpleAction(AttemptStand)));
+		BindUI(Master.Controller.PanelActions.AddAction("Charge", new CanAction(CanCharge), new TargetedAction(AttemptCharge)));
+		BindUI(Master.Controller.PanelActions.AddAction("Pounce", new CanAction(CanPounce), new TargetedAction(AttemptPounce)));
+		BindUI(Master.Controller.PanelActions.AddAction("Turn", new CanAction(CanTurn), new TargetedAction(AttemptTurn)));
+		BindUI(Master.Controller.PanelActions.AddAction("Eject", new CanAction(CanEject), new SimpleAction(AttemptEject)));
 		//Master.Controller.PanelActions.AddAction("climb", AttemptClimb);
 		base.InitActions();
 	}
 
 	public bool CanMove()
 	{
-		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["walk"] > 0))
+		if((Master.Posture == Postures.STAND) && (Master.Speed["walk"] > 0))
 			return true;
 		else
 			return false;
@@ -66,7 +67,7 @@ public class CenterTorso : Part
 
 	public bool CanReverse()
 	{
-		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["walk"] > 0))
+		if((Master.Posture == Postures.STAND) && (Master.Speed["walk"] > 0))
 			return true;
 		else
 			return false;
@@ -76,12 +77,12 @@ public class CenterTorso : Part
 	{
 		Entity location = Master.Environment.GetGridLocation(what.position)[0];
 		Vector3 pos = location.Position = new Vector3(0.0f, 1.0f, 0.0f);
-		Master.AttemptReverse(pos);
+		//Master.AttemptReverse(pos);
 	}
 
 	public bool CanCrawl()
 	{
-		if((Master.Posture == Mech.POSTURE_PRONE) && (Master.Speed["walk"] > 0))
+		if((Master.Posture == Postures.PRONE) && (Master.Speed["walk"] > 0))
 			return true;
 		else
 			return false;
@@ -97,7 +98,7 @@ public class CenterTorso : Part
 
 	public bool CanJump()
 	{
-		if((Master.Posture == Mech.POSTURE_STAND) && (Master.Speed["jump"] > 0))
+		if((Master.Posture == Postures.STAND) && (Master.Speed["jump"] > 0))
 			return true;
 		else
 			return false;
@@ -105,12 +106,12 @@ public class CenterTorso : Part
 
 	public void AttemptJump()
 	{
-		EventJump();
+		//EventJump();
 	}
 
 	public bool CanProne()
 	{
-		if(Master.Posture == Mech.POSTURE_STAND)
+		if(Master.Posture == Postures.STAND)
 			return true;
 		else
 			return false;
@@ -123,7 +124,7 @@ public class CenterTorso : Part
 
 	public bool CanStand()
 	{
-		if((Master.Posture == Mech.POSTURE_PRONE) && (Master.Locomotion > 0.0f))
+		if((Master.Posture == Postures.PRONE) && (Master.Locomotion > 0.0f))
 			return true;
 		else
 			return false;
@@ -148,7 +149,7 @@ public class CenterTorso : Part
 		Vector3 location = target.Position - new Vector3(0.0f, 1.0f, 0.0f);
 		if(CanCharge() && (target != null))
 		{
-			Master.EventCharge(location, target);
+			//Master.EventCharge(location, target);
 			foreach(KeyValuePair<string,Part> limb in Master.Body)
 				limb.Value.IsTapped = true;
 		}
@@ -156,7 +157,7 @@ public class CenterTorso : Part
 
 	public bool CanPounce()
 	{
-		if(Master.Posture == Mech.POSTURE_JUMP)
+		if(Master.Posture == Postures.JUMP)
 			return true;
 		else
 			return false;
@@ -168,7 +169,7 @@ public class CenterTorso : Part
 		Vector3 location = target.Position - new Vector3(0.0f, 1.0f, 0.0f);
 		if(CanPounce() && (target != null))
 		{
-			Master.EventPounce(location, target);
+			//Master.EventPounce(location, target);
 			foreach(KeyValuePair<string,Part> limb in Master.Body)
 				limb.Value.IsTapped = true;
 		}
@@ -189,7 +190,7 @@ public class CenterTorso : Part
 	{
 
 
-		if(!IsTapped && (Master != null) && (Master.PilotOb != null) && (Master.PilotOb.Environment.GetStatus() == Component.STATUS_OK))
+		if(!IsTapped && (Master != null) && (Master.PilotOb != null) && (Master.PilotOb.Environment.GetStatus() == Statuses.OK))
 		{
 			Debug.Log(Master.PilotOb.Environment);
 			if(Master.PilotOb.Environment != null)

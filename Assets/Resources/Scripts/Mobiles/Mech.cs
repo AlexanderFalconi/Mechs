@@ -1,17 +1,13 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using Config;
 
 public class Mech : Mobile {
-	public const int POSTURE_PRONE = 0;
-	public const int POSTURE_STAND = 1;
-	public const int POSTURE_JUMP = 2;
-	public const int STATUS_OK = 0;
-	public const int STATUS_DESTROY = 1;
-	public int Status = STATUS_OK;
+	public Statuses Status = Statuses.OK;
 	public Dictionary<string,Part> Body = new Dictionary<string,Part>() {{"head", new Head()}, {"left arm", new LeftArm()}, {"right arm", new RightArm()}, {"left leg", new LeftLeg()}, {"right leg", new RightLeg()}, {"left torso", new LeftTorso()}, {"right torso", new RightTorso()}, {"center torso", new CenterTorso()}};
 	public Dictionary<string,int> Speed = new Dictionary<string,int>() {{"jump", 0}, {"walk", 0}, {"run", 0}, {"momentum", 0}, {"moved", 0}};
-	public int Posture = POSTURE_STAND;
+	public Postures Posture = Postures.STAND;
 	private float Mass;
 	private Dictionary<string,float> Energy = new Dictionary<string,float>() {{"stored", 0}, {"current", 0}};
 	public float Rotation, Stabilization, Balance, Mobility, Locomotion, Thrust;//Mech attributes
@@ -74,7 +70,7 @@ public class Mech : Mobile {
 	{
 		if(Controller)
 		{
-			if(Environment.Interval["phase"] == Engine.PHASE_ACTION)
+			if(Environment.Phase == Phases.ACTION)
 			{
 				Controller.PanelWeapons.transform.parent.gameObject.SetActive(false);
 				Controller.PanelActions.transform.parent.gameObject.SetActive(true);
@@ -140,7 +136,7 @@ public class Mech : Mobile {
 	public override void EventDestroyed()
 	{
 		Environment.EventRelease(this);
-		Status = STATUS_DESTROY;
+		Status = Statuses.DESTROY;
 		base.EventDestroyed();		
 	}
 
@@ -193,10 +189,10 @@ public class Mech : Mobile {
 	{
 		float mass = GetMass();
 		isDone = false;
-		if(Environment.Interval["phase"] <= Engine.PHASE_ACTION)//Includes Engine.PHASE_DEPLOY
+		if(Environment.Phase <= Phases.ACTION)//Includes Phases.DEPLOY
 		{
 			Speed["momentum"] = Speed["moved"] = Speed["jumped"] = 0;
-			if((PilotOb == null) || (Status != STATUS_OK))
+			if((PilotOb == null) || (Status != Statuses.OK))
 				isDone = true;
 			else if(!PilotOb.Conscious)
 			{//Knocked out
@@ -221,130 +217,268 @@ public class Mech : Mobile {
 		return "mech";
 	}
 
-	public void AttemptMove(Vector3 position, bool reverse = false)
-	{
-		EventMove(GetMovementPath(GetDirectSteps(Position, position)), reverse); 
-	}
-
 	private int GetMovementCost(Vector3 position)
 	{
-		if(Posture == POSTURE_STAND)
+		if(Posture == Postures.STAND)
 		{
 			position.y-=1;//Need the ground underneath where the mech's feet will be; not empty space
 			return ((Tile)Environment.GetGridLocation(position)[0]).MoveCost;
 		}
-		else if(Posture == POSTURE_JUMP)
+		else if(Posture == Postures.JUMP)
 			return 1;//In midair all costs are 1
 		else
 			return 4;//Crawling
 	}
 
-	public void EventJump()
+	public float GetMovementEnergyCost(int mm)
 	{
-		Speed["jumped"] = 1;
-		Speed["momentum"] = 1;
-		Posture = POSTURE_JUMP;
-		EventMove(new List<Vector3>() {Position + new Vector3(0.0f, 1.0f, 0.0f))};//Now in midair
+		float mass = GetMass();
+		float cost = 0.0f;
+		for(int i = 1; i <= mm; i++)
+		{
+			if(Speed["moved"]+i <= Speed["walk"])
+				cost += mass;
+			else
+				cost += mass * (Speed["moved"]+i+1-Speed["walk"]);
+		}
+		return cost;
+	}
+
+	private int GetTurnCost(Vector3 position)
+	{
+		return 1;
+	}
+
+	public void AttemptMove(Vector3 position)
+	{
+		Environment.EventMove(this, GetMovementPath(GetDirectSteps(Position, position)), new SimpleMove(CanMoveForward), new StepMove(EventTurnForward), new StepMove(EventStepWalk), new SimpleMove(EventBalanceForward)); 
+	}
+
+	public void AttemptReverse(Vector3 position)
+	{
+		Environment.EventMove(this, GetMovementPath(GetDirectSteps(Position, position)), new SimpleMove(CanMoveReverse), new StepMove(EventTurnReverse), new StepMove(EventStepWalk), new SimpleMove(EventBalanceReverse)); 
+	}
+
+	public void AttemptTurn(Vector3 position)
+	{
+		EventTurnForward(position);
+		EventBalanceForward(); 
+	}
+
+	public void AttemptJump()
+	{
+		Posture = Postures.JUMP;
+		Environment.EventMove(this, new List<Vector3>() {Position + new Vector3(0.0f, 1.0f, 0.0f)}, new SimpleMove(CanJump), new StepMove(EventTurnPassthrough), new StepMove(EventStepJump), new SimpleMove(EventBalanceLand)); 
+	}
+
+	public void AttemptCharge(Entity target)
+	{
+		List<Vector3> path = GetMovementPath(GetDirectSteps(Position, target.Position));
+		Vector3 extra = path[0];//Add an extra step onto the path
+		Environment.EventMove(this, path, new SimpleMove(CanMoveForward), new StepMove(EventTurnForward), new StepMove(EventStepWalk), new SimpleMove(EventBalanceForward), target); 
+	}
+
+	public void AttemptLand()
+	{
+		Vector3 ground = new Vector3(Position.x,Position.y-1.0f,Position.z);
+		Vector3 falling = new Vector3(0.0f, -1.0f, 0.0f);
+		List<Vector3> path;
+		while(!Environment.OnLand(ground))
+			ground += falling;//still in air
+		path = GetMovementPath(GetDirectSteps(Position, ground));
+		Environment.EventMove(this, path, new SimpleMove(EventPassthrough), new StepMove(EventTurnPassthrough), new StepMove(EventStepLand), new SimpleMove(EventBalanceLand)); 
+	}
+
+	public void AttemptPounce(Entity target)
+	{
+		Vector3 ground = new Vector3(Position.x,Position.y-1.0f,Position.z);
+		Vector3 falling = new Vector3(0.0f, -1.0f, 0.0f);
+		List<Vector3> path;
+		Environment.EventMove(this, GetMovementPath(GetDirectSteps(Position, new Vector3(target.Position.x, Position.y, target.Position.z))), new SimpleMove(CanJump), new StepMove(EventTurnPassthrough), new StepMove(EventStepJump), new SimpleMove(EventPassthrough), target); 
+		while(!Environment.OnLand(ground))//still in air
+			ground += falling;
+		path = GetMovementPath(GetDirectSteps(Position, ground));
+		Environment.EventMove(this, path, new SimpleMove(EventPassthrough), new StepMove(EventTurnPassthrough), new StepMove(EventStepLand), new SimpleMove(EventBalanceLand), target); 
+	}
+
+	public void AttemptStand()
+	{
+		if(!EventDrainEnergy(GetMovementEnergyCost(2)))
+			return;//Not enough energy
+		Speed["moved"] += 2;
+		if(EventManeuver(0))
+			Posture = Postures.STAND;//else failed to stand
+		base.EventStand();
+		UpdateUI();
+	}
+
+	public void AttemptProne()
+	{
+		if(!EventDrainEnergy(GetMovementEnergyCost(1)))
+			return;//Not enough energy
+		Speed["moved"] += 1;
+		if(EventManeuver(-2))
+			Posture = Postures.PRONE;
+		else
+			EventFall(1);
+		base.EventProne();
+		UpdateUI();
+	}
+
+	public Vector3 GetRandomFacing()
+	{
+		int result = Random.Range(0, 8);
+		switch(result)
+		{
+			case 0:
+				return new Vector3(1.0f, 0.0f, 1.0f);
+			case 1:
+				return new Vector3(1.0f, 0.0f, 0.0f);
+			case 2:
+				return new Vector3(1.0f, 0.0f, -1.0f);
+			case 3:
+				return new Vector3(0.0f, 0.0f, 1.0f);
+			case 4:
+				return new Vector3(0.0f, 0.0f, -1.0f);
+			case 5:
+				return new Vector3(-1.0f, 0.0f, 1.0f);
+			case 6:
+				return new Vector3(-1.0f, 0.0f, 0.0f);
+			case 7:
+				return new Vector3(-1.0f, 0.0f, -1.0f);
+			default:
+				return new Vector3(0.0f, 0.0f, 0.0f);
+		}
 	}
 
 	public void EndTurn()
 	{
 		isDone = true;
-		if(Posture = POSTURE_JUMP)
-			EventLand();
+		if(Posture == Postures.JUMP)
+			AttemptLand();
 	}
 
-	public void EventLand(Entity intentional = null)
+	public bool CanMoveForward()
 	{
-		int ratio = Mathf.FloorToInt(Balance / GetMass());
-		Vector3 locator = new Vector3(Position.x,Position.y-1.0f,Position.z);
-		Vector3 falling = new Vector3(0.0f, -1.0f, 0.0f);
-		List<Vector3> tmp = new List<Vector3>();
-		while(Environment.Grid[locator.x,locator.y,locator.z].Count < 1 || !(Environment.Grid[locator.x,locator.y,locator.z] is Tile))//air
-		{
-			locator.y -= 1.0f;
-			Speed["falling"]++;
-			tmp.Add(falling);
-			Environment.EventMove(this, falling);
-			collider = Environment.GetCollision(this, intentional);
-			if(collider != null)
-			{
-				if(!EventCollisionAttack(collider, intentional))
-					break;//The collision arrested the move
-			}
-		}
-		Posture = POSTURE_STAND;
-		Speed["momentum"] = 0;
-		Speed["falling"] = 0;
-		if(((Stabilization/GetMass() < 2.0f) || (Balance/GetMass() < 2.0f)) && (!EventManeuver(3+Speed["falling"])))
-			EventFall(fall+1);
-		if(tmp.Count > 0)
-		{
-			isReady = false;
-			moveTo = tmp;
-			NextFace();			
-		}//else can't move
-		if(Posture != POSTURE_PRONE || !Environment.CanOccupy(this))
-			EventFall(1);//Ended up in an overloaded space, must fall
-		UpdateUI();		
+		if((Posture != Postures.STAND) || (Speed["moved"] >= Speed["run"]))
+			return false;
+		else
+			return true;
 	}
 
-	public void EventMove(List<Vector3> path, Entity intentional = null, bool reverse = false)
+	public bool CanMoveReverse()
 	{
-		Entity collider;
+		if((Posture != Postures.STAND) || (Speed["moved"] >= Speed["walk"]))
+			return false;
+		else
+			return true;
+	}
+
+	public bool CanJump()
+	{
+		if((Posture != Postures.JUMP) || (Speed["moved"] >= Speed["jump"]))
+			return false;
+		else
+			return true;		
+	}
+
+	public bool EventTurnForward(Vector3 face)
+	{
 		int cost;
-		List<Vector3> tmp = new List<Vector3>();
-		foreach(Vector3 move in path)
-		{
-			//COMPARE THIS MOVE WITH LAST MOVE
-			//IF DIFFERENT DURECTION
-			//NEED TO TURN
-			//TIE IN EVENT TURN HERE
-			//USE IT BY ITSELF FOR TURN ACTION
-			if(((Posture == POSTURE_JUMP) && (Speed["moved"] >= Speed["jump"])) || ((Posture != POSTURE_JUMP) && (Speed["moved"] >= Speed["run"])))
-				break;
-  			cost = GetMovementCost(move);
-			if(!EventDrainEnergy(GetMovementEnergyCost(cost)))
-				break;//Not enough energy
-			Speed["moved"]+=cost;
-			Speed["momentum"]++;
-			tmp.Add(move);
-			Environment.EventMove(this, move);
-			Position = move;
-			Facing = Position - move;
-			collider = Environment.GetCollision(this, intentional);
-			if(collider != null)
-			{
-				if(!EventCollisionAttack(collider, intentional))
-					break;//The collision arrested the move
-			}
-			if(((Speed["moved"] > Speed["walk"]) && (Balance/GetMass() < 2.0f) && !EventManeuver(2)) || 
-				((Speed["moved"] <= Speed["walk"]) && (Balance/GetMass() < 1.0f) && !EventManeuver(1)))
-			{
-				EventFall(1);
-				break;//Can't move anymore, fell down
-			}
-		}
-		if(tmp.Count > 0)
-		{
-			isReady = false;
-			moveTo = tmp;
-			NextFace();			
-		}//else can't move
-		if(Posture != POSTURE_PRONE || !Environment.CanOccupy(this))
-			EventFall(1);//Ended up in an overloaded space, must fall
-		UpdateUI();
+		if(Facing == face)
+			return true;
+		cost = GetTurnCost(face);
+		if(!EventDrainEnergy(GetMovementEnergyCost(cost)))
+			return false;//Not enough energy
+		Speed["moved"]+=GetTurnCost(face);
+		Facing = face;
+		return true;
 	}
 
-	public void OrderJump(Vector3 pos)
+	public bool EventTurnReverse(Vector3 face)
 	{
-		if(isReady == false)
-			return;//Can't move
-		if(Posture == 0)
-			return;//Can't jump while pron
-		Posture = 2;//Airborne
-		isReady = false;
-		moveTo = GetMovementPath(GetDirectSteps(Position, pos));
+		return EventTurnForward(Engine.Inverse(face));
+	}
+
+	public bool EventTurnPassthrough(Vector3 face)
+	{
+		return true;
+	}
+
+	public bool EventStepWalk(Vector3 move)
+	{
+		int	cost = GetTurnCost(move);
+		if(!EventDrainEnergy(GetMovementEnergyCost(cost)))
+			return false;//Not enough energy
+		Speed["moved"]+=cost;
+		Speed["momentum"]++;
+		Speed["momentum"]/=cost;
+		Position = move;
+		//tmp.Add(move);
+		return true;
+	}
+
+	public bool EventStepJump(Vector3 move)
+	{
+		if(!EventDrainEnergy(GetMovementEnergyCost(1)))
+			return false;//Not enough energy
+		Speed["moved"]++;
+		Speed["momentum"]++;
+		Speed["jumped"] = 1;
+		Position = move;
+		//tmp.Add(move);
+		return true;
+	}
+
+	public bool EventStepLand(Vector3 move)
+	{
+		Speed["momentum"]++;
+		Position = move;
+		//tmp.Add(move);
+		return true;
+	}
+
+	public bool EventBalanceForward()
+	{	
+		if(((Speed["moved"] > Speed["walk"]) && (Balance/GetMass() < 2.0f) && !EventManeuver(2)) || 
+			((Speed["moved"] <= Speed["walk"]) && (Balance/GetMass() < 1.0f) && !EventManeuver(1)))
+		{
+			EventFall(1);
+			return false;//Can't move anymore, fell down
+		}
+		else
+			return true;
+	}
+
+	public bool EventBalanceReverse()
+	{	
+		if(((Speed["moved"] > Speed["walk"]) && (Balance/GetMass() < 3.0f) && !EventManeuver(4)) || 
+			((Speed["moved"] <= Speed["walk"]) && (Balance/GetMass() < 2.0f) && !EventManeuver(3)))
+		{
+			EventFall(1);
+			return false;//Can't move anymore, fell down
+		}
+		else
+			return true;
+	}
+
+	public bool EventBalanceLand()
+	{
+		if(Environment.OnLand(Position))
+		{
+			Posture = Postures.STAND;
+			if(((Stabilization/GetMass() < 2.0f) || (Balance/GetMass() < 2.0f)) && (!EventManeuver(3+Speed["falling"])))
+				EventFall(Speed["falling"]+1);
+			Speed["momentum"] = 0;
+			Speed["falling"] = 0;
+			return false;
+		}
+		return true;
+	}
+
+	public bool EventPassthrough()
+	{//For 'can' and 'balance' events
+		return true;
 	}
 
 	public void AttemptFire(Weapon weapon)
@@ -431,7 +565,7 @@ public class Mech : Mobile {
 		}
 	}
 
-	public bool OrderLoad(Weapon weapon)
+	public bool AttemptLoad(Weapon weapon)
 	{
 		foreach(Component component in weapon.Installed.Components)
 		{
@@ -447,7 +581,7 @@ public class Mech : Mobile {
 		return false;//Couldn't find
 	}
 
-	public bool OrderReload(Weapon weapon, int max = 0)
+	public bool AttemptReload(Weapon weapon, int max = 0)
 	{
 		if(CanReload(weapon))
 		{
@@ -484,26 +618,16 @@ public class Mech : Mobile {
 			return true;
 	}
 
-	public void EventLand()
-	{
-		Posture = 1;//Land
-		if(Environment.Grid[(int)Position.x,(int)Position.y,(int)Position.z].Count > 0)
-		{//There's another mech in this space
-			if(!EventManeuver(2))//Try to avoid falling
-				EventFall(1);//Failed, fall
-		}
-	}
-
     public void EventMeleeAttack(Mech target, Part limb)
     {
         int accuracy = PilotOb.Piloting + limb.GetMeleeCR();
         Ammunition simulate = new Bludgeoning(limb.GetMeleeDamage());
-        Debug.Log(accuracy);
+        //Debug.Log(accuracy);
 		if(Random.Range(0.1f, 100.0f) <= Engine.GetThreshold(accuracy))
 		{
 			Debug.Log("MELEE DAMAGE IS: ");
 			Debug.Log(simulate.Damage["max"]);
-	 		target.EventDamage(this, simulate, limb.Level);//If actually hit
+	 		//target.EventDamage(this, simulate, limb.Level);//If actually hit
 	 		limb.EventMeleeBacklash();//Sometimes can hurt self
 	 		Debug.Log("MELEE HIT!");
  		}
@@ -512,22 +636,9 @@ public class Mech : Mobile {
  		UpdateUI();
     }
 
-	public void EventCharge(Entity target)
-	{
-		List<Vector3> path = GetMovementPath(GetDirectSteps(Position, target.Position));
-		Vector3 extra = path[0];//Add an extra step onto the path
-		EventMove(path, target);//Try to move through the target's path
-	}
-
-	public void EventPounce(Entity target)
-	{
-		List<Vector3> path = GetMovementPath(GetDirectSteps(new Vector3(Position, target.Position.x, Position.y,target.Position.z)));
-		EventMove(path, target);//Try to move to above the target
-		EventLand(target);
-	}
-
     public bool EventCollisionAttack(Entity collider, Entity intentional)
     {
+	/*
         int accuracy;
         if(collider == intentional)//Trying to hit this target
         	accuracy = Body["center torso"].GetMeleeCR() + PilotOb.Piloting - collider.PilotOb.Piloting;
@@ -552,6 +663,7 @@ public class Mech : Mobile {
 		}
 		else if(intentional != null)
 			Body["center torso"].EventMeleeBacklash();//Missed target
+    */
 		return true;//Missed target
     }
 
@@ -572,7 +684,7 @@ public class Mech : Mobile {
 			}
 	 		EventDamage(this, cluster, table);//If actually hit
 		}
- 		if(!EventManeuver(Momentum))
+ 		if(!EventManeuver(Speed["momentum"]))
  			EventFall(1);
     }
 
@@ -592,50 +704,12 @@ public class Mech : Mobile {
 
 	//NOTE, the returns are a problem because they dont soak the ammo discharge.
 
-	public float EventIndirectAttack(Entity potential, Ammunition ammo)
+	public int EventIndirectAttack(Entity potential, Ammunition ammo)
 	{//Indirect fire
 		if(Random.Range(0.1f, 100.0f) <= potential.Size*potential.Size)
 			return potential.GetComponent<Mech>().EventDamage(this, ammo);
 		else
-			return 0.0f;
-	}
-
-	public float GetMovementEnergyCost(int mm)
-	{
-		float mass = GetMass();
-		float cost = 0.0f;
-		for(int i = 1; i <= mm; i++)
-		{
-			if(Speed["moved"]+i <= Speed["walk"])
-				cost += mass;
-			else
-				cost += mass * (Speed["moved"]+i+1-Speed["walk"]);
-		}
-		return cost;
-	}
-
-	public override void EventStand()
-	{
-		if(!EventDrainEnergy(GetMovementEnergyCost(2)))
-			return;//Not enough energy
-		Speed["moved"] += 2;
-		if(EventManeuver(0))
-			Posture = POSTURE_STAND;//else failed to stand
-		base.EventStand();
-		UpdateUI();
-	}
-
-	public override void EventProne()
-	{
-		if(!EventDrainEnergy(GetMovementEnergyCost(1)))
-			return;//Not enough energy
-		Speed["moved"] += 1;
-		if(EventManeuver(-2))
-			Posture = POSTURE_PRONE;
-		else
-			EventFall(1);
-		base.EventProne();
-		UpdateUI();
+			return 0;
 	}
 
 	public override void EventFall(int height)
@@ -647,41 +721,7 @@ public class Mech : Mobile {
 		base.EventFall(height);
 	}
 
-	public Vector3 GetRandomFacing()
-	{
-		int result = Random.Range(0, 8);
-		switch(result)
-		{
-			case 0:
-				return new Vector3(1.0f, 0.0f, 1.0f);
-			case 1:
-				return new Vector3(1.0f, 0.0f, 0.0f);
-			case 2:
-				return new Vector3(1.0f, 0.0f, -1.0f);
-			case 3:
-				return new Vector3(0.0f, 0.0f, 1.0f);
-			case 4:
-				return new Vector3(0.0f, 0.0f, -1.0f);
-			case 5:
-				return new Vector3(-1.0f, 0.0f, 1.0f);
-			case 6:
-				return new Vector3(-1.0f, 0.0f, 0.0f);
-			case 7:
-				return new Vector3(-1.0f, 0.0f, -1.0f);
-			default:
-				return new Vector3(0.0f, 0.0f, 0.0f);
-		}
-	}
-
-	public bool CanMove(int amount)
-	{
-		if(Speed["moved"] == 0 || (Speed["moved"] + amount <= Speed["run"]))
-			return true;
-		else
-			return false;
-	}
-
-	public int EventDamage(Mech attacker, Ammunition ammo, string level)
+	public int EventDamage(Mech attacker, Ammunition ammo, string level = "standard")
 	{
 		Debug.Log("UNIT HIT: "+this);
 		base.EventDamage();
@@ -715,7 +755,7 @@ public class Mech : Mobile {
 		float angle = Vector3.Angle(other.transform.position, transform.position);
 		if(angle < 90.0f || angle > 270.0f)
 		{
-			if(Posture == POSTURE_PRONE)
+			if(Posture == Postures.PRONE)
 				return "rear";//Face down, has to hit rear
 			else
 				return "front";
@@ -775,7 +815,7 @@ public class Mech : Mobile {
 	public int GetAccuracyPenalty(Ammunition ammo)
 	{
 		int proneness = 0;
-		if(Posture == POSTURE_PRONE)
+		if(Posture == Postures.PRONE)
 			proneness = 2;
 		if(ammo.Installed.GetAccuracy() >= GetMass() * 2.0f)
 			return 0 + proneness;
@@ -789,7 +829,7 @@ public class Mech : Mobile {
 	{
 		float distance = Vector3.Distance(Position, target.Position);
 		int proneness = 0;
-		if(target.Posture == POSTURE_PRONE)
+		if(target.Posture == Postures.PRONE)
 		{
 			if(distance <= 1.0f)
 				proneness = -2;

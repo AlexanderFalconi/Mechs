@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using Config;
 
 public class ActionsArray : MonoBehaviour 
 {
 	public List<DynamicAction> Actions = new List<DynamicAction>();
     public GameObject action;//Button prefab
     public DynamicAction Selected;
-    public delegate void SimpleAction();
-    public delegate void TargetedAction(Transform what);
-    public delegate bool CanAction();
 
     public DynamicAction AddButton()
     {
@@ -25,8 +23,8 @@ public class ActionsArray : MonoBehaviour
     public Interface AddAction(string label, CanAction conditionHandler, SimpleAction actionHandler)
     {
         DynamicAction itemUI = AddButton();
-        itemUI.CanAction = conditionHandler;
-        itemUI.SimpleAction = actionHandler;
+        itemUI.CanActionHandler = conditionHandler;
+        itemUI.SimpleActionHandler = actionHandler;
         itemUI.Action = label;
         Actions.Add(itemUI);
         return itemUI as Interface;
@@ -35,8 +33,8 @@ public class ActionsArray : MonoBehaviour
     public Interface AddAction(string label, CanAction conditionHandler, TargetedAction actionHandler)
     {
         DynamicAction itemUI = AddButton();
-        itemUI.CanAction = conditionHandler;
-        itemUI.TargetedAction = actionHandler;
+        itemUI.CanActionHandler = conditionHandler;
+        itemUI.TargetedActionHandler = actionHandler;
         itemUI.Action = label;
         Actions.Add(itemUI);
         return itemUI as Interface;
@@ -48,8 +46,8 @@ public class ActionsArray : MonoBehaviour
     	{
     		if(button == act)
             {
-                if(button.SimpleAction != null)
-                    button.SimpleAction();//Its a simple action, just execute
+                if(button.SimpleActionHandler != null)
+                    button.SimpleActionHandler();//Its a simple action, just execute
                 else
                 {
                     button.Selected = true;//Its a complex action, wait for further input

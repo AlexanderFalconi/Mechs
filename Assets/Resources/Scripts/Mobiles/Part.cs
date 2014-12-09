@@ -1,11 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class Part 
 {
-	public const int STATUS_OK = 0;
-	public const int STATUS_DESTROY = 1;
-	public const int STATUS_SEVER = 2;
 	public string Short;
 	public Dictionary<string,int> HitTable;
 	public Dictionary<string,float> Proportion = new Dictionary<string,float>() {{"max mass", 0.0f}, {"mass", 0.0f}};
@@ -17,15 +15,15 @@ public class Part
 	public List<Part> Children = new List<Part>();
 	public List<Interface> UI = new List<Interface>();
 	public bool IsTapped = false;
-	public int Status = STATUS_OK;
+	public Statuses Status = Statuses.OK;
 	public float Accuracy = 0.0f;
 	public float Rotation = 0.0f;
 	public Mech Master;
 
-	public int GetStatus()
+	public Statuses GetStatus()
 	{
-		if(Parent != null && (Parent.GetStatus() != STATUS_OK))
-			return STATUS_SEVER;
+		if(Parent != null && (Parent.GetStatus() != Statuses.OK))
+			return Statuses.SEVER;
 		else
 			return Status;//OK
 	}

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Config;
 
 public class M1ShoulderActuator : Actuator 
 {
@@ -23,7 +24,7 @@ public class M1ShoulderActuator : Actuator
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 		{
 			Installed.Accuracy += GetAccuracy();
 			Installed.Rotation += GetRotation();

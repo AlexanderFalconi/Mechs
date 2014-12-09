@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class Chameleon : Armor 
+public class Electroreactive : Armor 
 {
-	public Chameleon(float mass): base(mass) 
+	public Electroreactive(float mass): base(mass) 
 	{
 		Short = "Chameleon";
 		Hardness = new Dictionary<string,int>() {

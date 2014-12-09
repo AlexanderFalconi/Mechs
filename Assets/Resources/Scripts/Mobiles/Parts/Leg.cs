@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class Leg : Part 
 {
@@ -27,13 +28,13 @@ public class Leg : Part
 
 	public override void InitActions()
 	{
-		BindUI(Master.Controller.PanelActions.AddAction("Kick", new ActionsArray.CanAction(CanKick), new ActionsArray.TargetedAction(AttemptKick)));
+		BindUI(Master.Controller.PanelActions.AddAction("Kick", new CanAction(CanKick), new TargetedAction(AttemptKick)));
 		base.InitActions();
 	}
 
 	public bool CanKick()
 	{
-		if(IsTapped || ((Master.Posture == Mech.POSTURE_PRONE) && (Force >= 0.0f)))
+		if(IsTapped || ((Master.Posture == Postures.PRONE) && (Force >= 0.0f)))
 			return false;
 		else
 			return true;

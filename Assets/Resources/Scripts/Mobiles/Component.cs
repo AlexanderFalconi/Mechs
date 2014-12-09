@@ -1,14 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Config;
 
 public class Component 
 {
-    public const int STATUS_OK = 0;
-    public const int STATUS_STUN = 1;
-    public const int STATUS_DAMAGE = 2;
-    public const int STATUS_DESTROY = 3;
     private float Mass;
-    public int Status = 0;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
+    public Statuses Status = Statuses.OK;//0 = OK, 1 = Stunned, 2 = Disabled, 3 = Destroyed
     public Dictionary<string,float> Energy = new Dictionary<string,float>();
     public Part Installed;
     public string Short, Long;
@@ -42,8 +39,8 @@ public class Component
     public virtual void EventDamage(int dmg)
     {
         Status += dmg;
-    	if(Status > 3)
-    		Status = 3;//0: ok, 1: stun, 2: damaged, 3: destroyed
+    	if(Status > Statuses.DESTROY)
+    		Status = Statuses.DESTROY;//0: ok, 1: stun, 2: damaged, 3: destroyed
         Debug.Log("CRIT ON: "+this+" "+Status);
     }
 
@@ -62,25 +59,25 @@ public class Component
         return false;//Doesn't hold personell
     }
 
-    public int GetStatus()
+    public Statuses GetStatus()
     {
-        if(Installed.GetStatus() != Part.STATUS_OK)
-            return STATUS_DESTROY;
+        if(Installed.GetStatus() != Statuses.OK)
+            return Statuses.DESTROY;
         else
-            return Status;
+            return Status; 
     }
 
     public string GetStatusLong()
     {
-        if(Installed.GetStatus() != Part.STATUS_OK)
+        if(Installed.GetStatus() != Statuses.OK)
             return "Lost";
         switch(Status)
         {
-            case Component.STATUS_OK:
+            case Statuses.OK:
                 return "OK";
-            case Component.STATUS_STUN:
+            case Statuses.STUN:
                 return "Stunned";
-            case Component.STATUS_DAMAGE: 
+            case Statuses.DAMAGE: 
                 return "Damaged";
             default: 
                 return "Destroyed";
@@ -105,8 +102,8 @@ public class Component
 
     public virtual void Interval()
     {
-        if(Status == 1)
-            Status = 0;//Recover from stun
+        if(Status == Statuses.STUN)
+            Status = Statuses.OK;//Recover from stun
         if(Energy.ContainsKey("passive"))//If uses passive energy, drain
             Installed.Master.EventDrainEnergy(Energy["passive"]);
         UpdateUI();

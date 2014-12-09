@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Config;
 
 public class Arm : Part
 {
@@ -48,7 +49,7 @@ public class Arm : Part
 
 	public override void InitActions()
 	{
-		BindUI(Master.Controller.PanelActions.AddAction("Punch", new ActionsArray.CanAction(CanPunch), new ActionsArray.TargetedAction(AttemptPunch)));
+		BindUI(Master.Controller.PanelActions.AddAction("Punch", new CanAction(CanPunch), new TargetedAction(AttemptPunch)));
 		//Master.Controller.AddAction("push", TargetedAction(AttemptPush)); 
 		//Master.Controller.AddAction("grab", TargetedAction(AttemptGrab));
 		base.InitActions();
@@ -56,7 +57,7 @@ public class Arm : Part
 
 	public bool CanPunch()
 	{
-		if(IsTapped || ((Master.Posture == Mech.POSTURE_PRONE) && (Force >= 0.0f)))
+		if(IsTapped || ((Master.Posture == Postures.PRONE) && (Force >= 0.0f)))
 			return false;
 		else
 			return true;

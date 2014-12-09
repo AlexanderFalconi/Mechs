@@ -1,17 +1,14 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using Config;
 
 public class Engine : MonoBehaviour 
 {
-	public const int PHASE_DEPLOY = 0;
-	public const int PHASE_ACTION = 1;
-	public const int PHASE_WEAPON = 2;
-	public const int PHASE_END = 3;
 	private static float[] Dice = {99.5f, 97.2f, 91.6f, 83.3f, 72.2f, 58.3f, 41.6f, 27.7f, 16.6f, 8.3f, 2.7f, 0.5f};
 	public List<Mech> Inventory = new List<Mech>();
-	public Dictionary<string,int> Interval = new Dictionary<string,int>() {{"turn", 0}, {"round", 0}, {"phase", 0}};//Sentinel value 1000
+	public Dictionary<string,int> Interval = new Dictionary<string,int>() {{"turn", 0}, {"round", 0}};//Sentinel value 1000
+	public Phases Phase = Phases.DEPLOY;
 	public Transform boundingBox, grass, hellfyre, bushwacker;
 	private Transform boundingBoxOb;
 	public List<Entity>[,,] Grid = new List<Entity>[30, 5, 30]; 
@@ -62,7 +59,7 @@ public class Engine : MonoBehaviour
 		mech.gameObject.GetComponent<Mech>().LoadPilot(new Pilot("Eric", 5, 3));
 		mech.gameObject.AddComponent<AI>();
 		*/
-		Interval["phase"] = PHASE_DEPLOY;
+		Phase = Phases.DEPLOY;
 		StartTurn();//starts game
 	}
 	
@@ -97,14 +94,14 @@ public class Engine : MonoBehaviour
 			if(isReady && !IsGameOver)
 			{
 				Inventory[0].Controller.ActivateCamera(0);
-				if(Interval["phase"] == PHASE_ACTION)
+				if(Phase == Phases.ACTION)
 				{
 					if(Inventory[Interval["turn"]].GetComponent<AI>() as AI != null)
 						Inventory[Interval["turn"]].GetComponent<AI>().SimpleAction();
 					if(Inventory[Interval["turn"]].isDone)
 						NextTurn();
 				}
-				else if(Interval["phase"] == PHASE_END)
+				else if(Phase == Phases.END)
 				{
 					if(Weapons.Count > 0)
 					{
@@ -114,7 +111,7 @@ public class Engine : MonoBehaviour
 					else
 						NextTurn();
 				}
-				else//PHASE_WEAPON or PHASE_DEPLOY
+				else//Phases.WEAPON or Phases.DEPLOY
 				{
 					foreach(Mech mech in Inventory)
 					{
@@ -140,21 +137,21 @@ public class Engine : MonoBehaviour
 	{
 
 		isReady = false;//Need to wait until the next turn is set up
-		if((Interval["turn"] >= Inventory.Count-1) || (Interval["phase"] == PHASE_DEPLOY))
+		if((Interval["turn"] >= Inventory.Count-1) || (Phase == Phases.DEPLOY))
 		{
-			switch(Interval["phase"])
+			switch(Phase)
 			{
-				case PHASE_ACTION:
-					Interval["phase"]++; break;
-				case PHASE_WEAPON:
-					Interval["phase"]++; break;
-				case PHASE_END:
+				case Phases.ACTION:
+					Phase++; break;
+				case Phases.WEAPON:
+					Phase++; break;
+				case Phases.END:
 					IsGameOver = VictoryConditions();
 					Interval["turn"] = 0;//reset turns
 					Interval["round"]++; 
-					Interval["phase"] = PHASE_ACTION; break;
-				default://Is deployment Interval["phase"]
-					Interval["phase"] = PHASE_ACTION; break;
+					Phase = Phases.ACTION; break;
+				default://Is deployment Phase
+					Phase = Phases.ACTION; break;
 			}
 		}
 		else//still in action phase
@@ -164,13 +161,13 @@ public class Engine : MonoBehaviour
 
 	private bool VictoryConditions()
 	{
-		if((Inventory[0].Status != Mech.STATUS_OK) || (Inventory[0].PilotOb == null))
+		if((Inventory[0].Status != Statuses.OK) || (Inventory[0].PilotOb == null))
 			return true;//Game over, player lost
 		foreach(Mech entity in Inventory)
 		{
 			if(Inventory[0] == entity)
 				continue;
-			else if((entity.Status == Mech.STATUS_OK) && (Inventory[0].PilotOb != null))
+			else if((entity.Status == Statuses.OK) && (Inventory[0].PilotOb != null))
 				return false;//Game not over
 		}
 		return true;//Game over, player won
@@ -178,17 +175,17 @@ public class Engine : MonoBehaviour
 
 	private void StartTurn()
 	{
-		if(Interval["phase"] == PHASE_ACTION)
+		if(Phase == Phases.ACTION)
 		{
 			boundingBoxOb.gameObject.SetActive(true);
 			boundingBoxOb.position = Inventory[Interval["turn"]].transform.position - new Vector3(0.0f, 0.5f, 0.0f);
 			TurnOutput.Set("Round: "+Interval["round"]+": Action Phase ("+Interval["turn"]+")");
 			Inventory[Interval["turn"]].Interval();
 		}
-		else if(Interval["phase"] == PHASE_WEAPON || Interval["phase"] == PHASE_DEPLOY)
+		else if(Phase == Phases.WEAPON || Phase == Phases.DEPLOY)
 		{//Weapon or Deployment Phase
 			boundingBoxOb.gameObject.SetActive(false);
-			if(Interval["phase"] == PHASE_WEAPON)
+			if(Phase == Phases.WEAPON)
 				TurnOutput.Set("Round: "+Interval["round"]+": Weapon Phase");
 			else
 				TurnOutput.Set("Deployment Phase");
@@ -242,10 +239,34 @@ public class Engine : MonoBehaviour
 		delay = Time.time+2.0f;
 	}
 
-	public void EventMove(Entity entity, Vector3 to)
+	public void EventMove(Mech entity, List<Vector3> path, SimpleMove canMove, StepMove eventTurn, StepMove eventMove, SimpleMove eventBalance, Entity target = null)
 	{
-		Grid[(int)entity.Position.x,(int)entity.Position.y,(int)entity.Position.z].Remove(entity);
-		Grid[(int)to.x,(int)to.y,(int)to.z].Add(entity);
+		Entity collider;
+		List<Vector3> tmp = new List<Vector3>();
+		foreach(Vector3 move in path)
+		{
+			if(!canMove())
+				break;
+			if(!eventTurn(entity.Position - move))
+				break;
+			if(!canMove())
+				break;
+			if(!eventMove(move))
+				break;
+			Grid[(int)entity.Position.x,(int)entity.Position.y,(int)entity.Position.z].Remove(entity);
+			Grid[(int)move.x,(int)move.y,(int)move.z].Add(entity);
+			collider = GetCollision(entity, target);
+			if(collider != null)
+			{
+				if(!entity.EventCollisionAttack(collider, target))
+					break;//The collision arrested the move
+			}
+			if(!eventBalance())
+				break;
+		}
+		if(entity.Posture != Postures.PRONE || !CanOccupy(entity))
+			entity.EventFall(1);//Ended up in an overloaded space, must fall
+		entity.UpdateUI();
 	}
 
 	public List<Entity> GetGridLocation(Vector3 position)
@@ -262,14 +283,14 @@ public class Engine : MonoBehaviour
 		return Dice[dc];
 	}
 
-	public Entity GetCollision(Mech movant, Entity respondent)
+	public Entity GetCollision(Mech movant, Entity target)
 	{
 		float inevitable = 0.0f;
 		List<Entity> others = Grid[(int)movant.Position.x,(int)movant.Position.y,(int)movant.Position.z];
 		if(others.Count <= 1)
 			return null;//Can't collide with self
-		if(others.Contains(respondent))
-			return respondent;//Singled out for collision
+		if(others.Contains(target))
+			return target;//Singled out for collision
 		foreach(Entity ent in others)
 			inevitable += Mathf.Pow(ent.Size, 2.0f);
 		if(Random.Range(0.1f, 100.0f) <= inevitable)
@@ -287,18 +308,31 @@ public class Engine : MonoBehaviour
 		return null;//No collision
 	}
 
+	public bool OnLand(Vector3 locator)
+	{
+		if(Grid[(int)locator.x,(int)locator.y,(int)locator.z].Count < 1 || !(Grid[(int)locator.x,(int)locator.y,(int)locator.z] is Tile))//air
+			return false;//In air
+		else
+			return true;//On ground
+	}
+
 	public bool CanOccupy(Mech movant)
 	{
 		int occupance = 0;
 		List<Entity> others = Grid[(int)movant.Position.x,(int)movant.Position.y,(int)movant.Position.z];
 		foreach(Entity ent in others)
 		{
-			if(((Mech)ent).Posture != Mech.POSTURE_PRONE)
+			if(((Mech)ent).Posture != Postures.PRONE)
 				occupance += ent.Size;
 		}
 		if(occupance > 10)
 			return false;//Too crowded
 		else
 			return true;
+	}
+
+	static public Vector3 Inverse(Vector3 dir)
+	{
+		return -dir;
 	}
 }

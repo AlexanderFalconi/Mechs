@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Config;
 
 public class Thruster : Component {
 	public float Thrust;
@@ -16,7 +17,7 @@ public class Thruster : Component {
 
 	public override void Interval()
 	{
-		if(GetStatus() == STATUS_OK)
+		if(GetStatus() == Statuses.OK)
 			Installed.Master.Thrust += Thrust;
 		base.Interval();
   	}
